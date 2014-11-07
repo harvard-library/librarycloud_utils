@@ -1,26 +1,7 @@
-var BASEURL = "<BASE URL ADDRESS>";
+var BASEURL = "<BASE URL FOR COLLECTIONS API>";
 var collections;
 var items = [];
 
-$('#json').click(function(){ 
-    alert('json');
-     $.getJSON(BASEURL + "collections.json",
-     function(data) {
-        alert(data);         
-      });   
-});
-/*        $.get('http://libcloud-renaud:8080/collections/v2/collections.xml', 
-
-    function(data, status, response){
-
-        alert(response.responseText);
-
-    });
-*/
-$('#ajax').click(function(){ 
-   getCollectionData(); 
-
-});
 
 $('#put').click(function(){
     var collectionID = $('#updateID').val();
@@ -36,8 +17,7 @@ $('#post').click(function(){
     saveNew(title, abstract);
 });
 
-var saveNew = function(title, abstract)
-{
+var saveNew = function(title, abstract){
      $.ajax({ 
          type: "POST",
          headers: {
@@ -53,15 +33,9 @@ var saveNew = function(title, abstract)
         $('#newTitle').val('');
         $('#newAbstract').val('');
          getCollectionData(); });
-/*        $.post(url:BASEURL + "collections.json", data: {title: title, abstract: abstract},
-        success: function(data){        
-            getData();
-         }
-    );*/
 };
 
-var getCollectionData= function()
-{
+var getCollectionData= function(){
      $.ajax({ 
          type: "GET",
          dataType: "json",
@@ -71,11 +45,9 @@ var getCollectionData= function()
             displayCollections(data);
          }
      });
-
  };
 
- var getItemData = function(collectionID)
- {
+ var getItemData = function(collectionID){
      $.ajax({ 
          type: "GET",
          dataType: "json",
@@ -99,8 +71,7 @@ var getCollectionData= function()
     getItemData(collectionID);
  };
 
- var updateCollection = function(collectionID, title, abstract)
- {
+ var updateCollection = function(collectionID, title, abstract){
      $.ajax({ 
          type: "put",
          headers: {
@@ -115,8 +86,7 @@ var getCollectionData= function()
      });
  };
 
- var deleteCollection= function(collectionID)
- {
+ var deleteCollection= function(collectionID){
      $.ajax({ 
          type: "Delete",
          headers: {
@@ -133,8 +103,7 @@ var getCollectionData= function()
 
  };
 
- var deleteCollectionItem = function(itemId, collectionID)
- {
+ var deleteCollectionItem = function(itemId, collectionID){
      $.ajax({ 
          type: "Delete",
          headers: {
@@ -150,8 +119,7 @@ var getCollectionData= function()
 
  };
 
-var displayItems = function(collectionId, itemList)
-{
+var displayItems = function(collectionId, itemList){
     var table;
      if($.fn.dataTable.isDataTable( '#itemTable' ))
      { table  = $('#itemTable').DataTable();
@@ -212,3 +180,5 @@ var displayCollections = function(collectionList) {
     table.draw();
 
 };
+
+getCollectionData();

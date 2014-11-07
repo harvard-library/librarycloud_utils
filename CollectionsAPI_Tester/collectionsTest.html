@@ -1,0 +1,69 @@
+<html>
+<head>
+   <script type="text/javascript" src="jquery-1.11.0.min.js" ></script>
+   <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.js"></script>
+
+</head>
+<body>
+
+    <button id="ajax">Get collections</button>
+
+
+    <br />
+    <br />
+    <table border=1 id="collectionTable">
+    </table>
+
+    <br />
+    <br />
+    <strong>New Collection</strong>
+    <br />
+    <table>
+    <tr>
+    <td>Title: </td>
+    <td><input id='newTitle' type="text" /></td>
+    </tr>
+    <tr>
+    <td>Abstract: </td>
+    <td><textarea id='newAbstract'></textarea></td>
+    </tr>
+    <tr>
+    <td colspan="2" style="text-align:right"><button id="post">Save new Collection</button></td>
+    </tr>
+    </table>
+
+    <br />
+    <br />
+    <div id="wrapper" width="100%" >
+    <div width="50%">
+    <strong>Update Collection</strong>
+    <br />
+    <table>
+    <tr>
+    <td>Title: </td>
+    <td><input id='updateID' value='0' type='hidden' /> <input id='updateTitle' type="text" maxlength="100" /></td>
+    </tr>
+    <tr>
+    <td>Abstract: </td>
+    <td><textarea id='updateAbstract'></textarea></td>
+    </tr>
+    <tr>
+    <td colspan="2" style="text-align:right"><button id="put">Update Collection</button></td>
+    </tr>
+    </table>
+    </div>
+    <div width="50%">
+    <strong>Collection Items</strong>
+    <br />
+    <table border=1 style="text-align:left" id="itemTable">
+    </table>
+    </div>
+    </div>
+        <script type="text/javascript">
+
+
+    </script>
+   <script type="text/javascript" src="collectionsTest.js"></script>
+
+</body> 
+</html>

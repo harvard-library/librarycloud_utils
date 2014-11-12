@@ -3,7 +3,7 @@
    <script type="text/javascript" src="jquery-1.11.0.min.js" ></script>
    <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.js"></script>
 
-<style>
+<!--<style>
     .bordered {
     border-collapse: collapse;
 }
@@ -11,17 +11,17 @@
 .bordered table, th, td {
     border: 1px solid black;
 }
-</style>
+</style> -->
 </head>
 <body>
     <br />
     <br />
     <table>
     <tr>
-    <td width="50%">
+    <td align='center' width="50%">
     <strong>Collections</strong>
     <br />
-    <table class="bordered"  id="collectionTable">
+    <table style='border: 1px solid black'  id="collectionTable">
     </table>
 </td>
 <td width="50%" align="center">
@@ -42,7 +42,7 @@
     </table>
 </td>
 </tr>
-<tr>
+<tr style='display: none' id='updateRow'>
 <td width="50%" align="center">
     <br />
     <br />
@@ -51,7 +51,9 @@
     <table>
     <tr>
     <td>Title: </td>
-    <td><input id='updateID' value='0' type='hidden' /> <input id='updateTitle' type="text" maxlength="100" /></td>
+    <td>
+        <input id='updateID' value='0' type='hidden' /> 
+        <input id='updateTitle' type="text" maxlength="100" /></td>
     </tr>
     <tr>
     <td>Abstract: </td>
@@ -65,11 +67,11 @@
     <td width="50%" align="center">
     <strong>Collection Items</strong>
     <br />
-    <table class="bordered" style="text-align:left" id="itemTable">
+    <table class="bordered" style="text-align:left;border: 1px solid black" id="itemTable">
     </table>
     </td>
     </tr> 
-    <tr>
+    <tr id="updateItemsRow" style='display: none'>
     <td colspan="2" align="center">  
         <br />
         <br />

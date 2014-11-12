@@ -28,7 +28,8 @@ $('#addItemsButton').click(function(){
 var addItems = function(collectionID, itemIdList){
     var itemList = []; //not sure if this is really necessary
     $.each(itemIdList, function(index, itemId){
-        itemList.push({item_id: itemId});
+        if(itemId.length > 0)
+            itemList.push({item_id: itemId});
     })
 
      $.ajax({ 
@@ -132,6 +133,9 @@ var getCollectionData= function(){
     $('#updateTitle').val(test[0].title);
     $('#updateAbstract').val(test[0].abstract);
     $('#updateID').val(collectionID);
+    $('#updateRow').show();
+    $('#updateItemsRow').show();
+
     getItemData(collectionID);
  };
 
@@ -200,7 +204,7 @@ var displayItems = function(collectionId, itemList){
     
     table.clear();
     $.each((itemList),function(index,item){
-        var deleteButtonString = '<button onclick="deleteCollectionItem(' + item.item_id.replace(/"/g,'') + ', ' + collectionId +  ')">Delete</button>';
+        var deleteButtonString = '<button onclick=\'deleteCollectionItem("' + item.item_id.replace(/"/g,'') + '", ' + collectionId +  ')\'>Delete</button>';
         table.row.add({ID: item.item_id, Title: item.title,
             Delete: deleteButtonString});
 

@@ -1,6 +1,7 @@
-var BASEURL = "<BASE URL FOR COLLECTIONS API>";
+var BASEURL = "http://libcloud-renaud:8080/collections/v2/";
+//var BASEURL = "<BASE URL FOR COLLECTIONS API>";
 var collections;
-var items = [];
+//var items = [];
 
 
 $('#put').click(function(){
@@ -16,6 +17,39 @@ $('#post').click(function(){
     var abstract = $('#newAbstract').val();
     saveNew(title, abstract);
 });
+
+$('#addItemsButton').click(function(){
+    var itemList = $('#addItemsTextArea').val().split('\n');
+    var collectionID = $('#updateID').val();
+
+    addItems(collectionID, itemList);
+});
+
+var addItems = function(collectionID, itemIdList){
+    var itemList = []; //not sure if this is really necessary
+    $.each(itemIdList, function(index, itemId){
+        itemList.push({item_id: itemId});
+    })
+
+     $.ajax({ 
+         type: "POST",
+         headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'},
+         url: BASEURL + "collections/" + collectionID,
+         data: JSON.stringify(itemList, null, 2),
+         dataType: 'json',
+         success: function(data){     
+            getItemData(collectionID)   
+         }
+
+     }).done(function()  { 
+        $('#newTitle').val('');
+        $('#newAbstract').val('');
+         getCollectionData(); });
+    
+};
+
 
 var saveNew = function(title, abstract){
      $.ajax({ 
@@ -48,15 +82,45 @@ var getCollectionData= function(){
  };
 
  var getItemData = function(collectionID){
+    var items = [];
+    var hydratedItems =[];
+
      $.ajax({ 
          type: "GET",
          dataType: "json",
          url: BASEURL + "collections/" + collectionID + "/items",
          success: function(data){        
             items = data;
-            displayItems(collectionID, data);
+            
          }
-     });
+     }).done(function(){
+
+         var promiseList = [];
+
+         $.each(items, function(index, item){
+            promiseList.push(
+             $.ajax({
+                 type: "GET",
+                 dataType: "json",
+                 url: "http://api.lib.harvard.edu/v2/items.json?recordIdentifier=" + item.item_id ,
+                 success: function(data, textStatus, jqXHR){        
+                    if(data.pagination.numFound != '0') //found a record
+                    {
+                        hydratedItems.push({item_id:data.items.mods.recordInfo.recordIdentifier , title:data.items.mods.titleInfo.title})
+                    } else { //not found
+                        hydratedItems.push({item_id: item.item_id, title: 'Item not found.'});
+                    }
+                    //hydratedItems.push(data); //add to list of items to be inserted.                
+                }})
+
+             );
+
+         });
+         $.when.apply($, promiseList).done(function(){
+            displayItems(collectionID, hydratedItems);
+         });
+         
+    });
  };
 
 
@@ -130,13 +194,14 @@ var displayItems = function(collectionId, itemList){
         paging: false,
         columns:[
         {title: 'ID', data:'ID'}, 
+        {title: 'Title', data:'Title'},
         {title:'Delete', data:'Delete'}]});
     }
     
     table.clear();
     $.each((itemList),function(index,item){
         var deleteButtonString = '<button onclick="deleteCollectionItem(' + item.item_id.replace(/"/g,'') + ', ' + collectionId +  ')">Delete</button>';
-        table.row.add({ID: item.item_id, 
+        table.row.add({ID: item.item_id, Title: item.title,
             Delete: deleteButtonString});
 
     });

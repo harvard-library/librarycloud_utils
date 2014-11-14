@@ -25,6 +25,16 @@ $('#addItemsButton').click(function(){
     addItems(collectionID, itemList);
 });
 
+var getHeader = function()
+{
+    return {
+         
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-LibraryCloud-API-Key': $('#userAPITokenText').val()
+            };
+}
+
 var addItems = function(collectionID, itemIdList){
     var itemList = []; //not sure if this is really necessary
     $.each(itemIdList, function(index, itemId){
@@ -34,9 +44,7 @@ var addItems = function(collectionID, itemIdList){
 
      $.ajax({ 
          type: "POST",
-         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'},
+         headers: getHeader(),
          url: BASEURL + "collections/" + collectionID,
          data: JSON.stringify(itemList, null, 2),
          dataType: 'json',
@@ -55,9 +63,7 @@ var addItems = function(collectionID, itemIdList){
 var saveNew = function(title, abstract){
      $.ajax({ 
          type: "POST",
-         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'},
+         headers: getHeader(),
          url: BASEURL + "collections.json",
          data: JSON.stringify({title: title, abstract: abstract}, null, 2),
          dataType: 'json',
@@ -142,9 +148,7 @@ var getCollectionData= function(){
  var updateCollection = function(collectionID, title, abstract){
      $.ajax({ 
          type: "put",
-         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'},
+         headers: getHeader(),
          url: BASEURL + "collections/" + collectionID + '/',
          data: JSON.stringify({title: title, abstract: abstract}, null, 2),
          dataType: 'json',
@@ -157,10 +161,7 @@ var getCollectionData= function(){
  var deleteCollection= function(collectionID){
      $.ajax({ 
          type: "Delete",
-         headers: {
-         
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'},
+         headers: getHeader(),
          url: BASEURL + "collections/" + collectionID + '/',
          
          dataType: 'json',
@@ -174,9 +175,7 @@ var getCollectionData= function(){
  var deleteCollectionItem = function(itemId, collectionID){
      $.ajax({ 
          type: "Delete",
-         headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'},
+         headers: getHeader(),
          url: BASEURL + "collections/" + collectionID + '/items/' + itemId,
          
          dataType: 'json',

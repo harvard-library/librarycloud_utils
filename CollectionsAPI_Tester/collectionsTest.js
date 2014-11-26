@@ -1,10 +1,12 @@
-var BASEURL = "http://collections-api.lib.harvard.edu/v2/";
+var BASEURL = "http://libcloud-renaud:8080/collections/v2/";
 //var BASEURL = "<BASE URL FOR COLLECTIONS API>";
 var collections;
 //var items = [];
 
 
 $('#put').click(function(){
+    updateErrorLabel('');
+
     var collectionID = $('#updateID').val();
     var title = $('#updateTitle').val();
     var abstract = $('#updateAbstract').val();
@@ -13,25 +15,48 @@ $('#put').click(function(){
 });
 
 $('#post').click(function(){
+    updateErrorLabel('');
     var title = $('#newTitle').val();
     var abstract = $('#newAbstract').val();
     saveNew(title, abstract);
 });
 
 $('#addItemsButton').click(function(){
+    updateErrorLabel('');
     var itemList = $('#addItemsTextArea').val().split('\n');
     var collectionID = $('#updateID').val();
 
     addItems(collectionID, itemList);
 });
 
+
+var updateErrorLabel = function(message){
+    message = '<strong><span style="color:red">' + message + '</span></strong>';
+    $('#errorLabel').html(message);
+};
+
+$.ajaxSetup({
+    statusCode: {
+        401: function(){
+            updateErrorLabel('Error: Unauthorized! Please check your user API token is valid.');
+        },
+        404: function(){
+            updateErrorLabel('Error: Remote resource not found.');
+        },
+    }
+});
+
 var getHeader = function()
 {
+    var token = $('#userAPITokenText').val();
+    if(!token || token == ""){
+        token = 999999999;
+    }
     return {
          
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-LibraryCloud-API-Key': $('#userAPITokenText').val()
+            'X-LibraryCloud-API-Key': token
             };
 }
 
@@ -49,13 +74,14 @@ var addItems = function(collectionID, itemIdList){
          data: JSON.stringify(itemList, null, 2),
          dataType: 'json',
          success: function(data){     
-            getItemData(collectionID)   
+            getItemData(collectionID)
          }
-
      }).done(function()  { 
         $('#newTitle').val('');
         $('#newAbstract').val('');
-         getCollectionData(); });
+         getCollectionData(); 
+     });
+     
     
 };
 
@@ -160,6 +186,7 @@ var getCollectionData= function(){
  };
 
  var deleteCollection= function(collectionID){
+    updateErrorLabel('');
      $.ajax({ 
          type: "Delete",
          headers: getHeader(),
@@ -174,6 +201,7 @@ var getCollectionData= function(){
  };
 
  var deleteCollectionItem = function(itemId, collectionID){
+    updateErrorLabel('');
      $.ajax({ 
          type: "Delete",
          headers: getHeader(),
@@ -188,6 +216,7 @@ var getCollectionData= function(){
  };
 
 var displayItems = function(collectionId, itemList){
+    updateErrorLabel('');
     var table;
      if($.fn.dataTable.isDataTable( '#itemTable' ))
      { table  = $('#itemTable').DataTable();

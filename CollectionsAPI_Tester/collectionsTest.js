@@ -1,4 +1,4 @@
-var BASEURL = "http://libcloud-renaud:8080/collections/v2/";
+var BASEURL = "http://collections-api.lib.harvard.edu/v2/";
 //var BASEURL = "<BASE URL FOR COLLECTIONS API>";
 var collections;
 //var items = [];

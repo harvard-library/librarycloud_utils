@@ -1,4 +1,4 @@
-var BASEURL = "http://libcloud-renaud:8080/collections/v2/";
+var BASEURL = "http://collections-api.lib.harvard.edu/v2/";
 //var BASEURL = "<BASE URL FOR COLLECTIONS API>";
 var collections;
 //var items = [];
@@ -109,11 +109,12 @@ var getCollectionData= function(){
              $.ajax({
                  type: "GET",
                  dataType: "json",
-                 url: "http://api.lib.harvard.edu/v2/items.json?recordIdentifier=" + item.item_id ,
+                 url: "http://api.lib.harvard.edu/v2/items.dc.json?recordIdentifier=" + item.item_id ,
                  success: function(data, textStatus, jqXHR){        
                     if(data.pagination.numFound != '0') //found a record
                     {
-                        hydratedItems.push({item_id:data.items.mods.recordInfo.recordIdentifier , title:data.items.mods.titleInfo.title})
+                        var t = Array.isArray(data.item.title) ? data.item.title[0] : data.item.title;
+                        hydratedItems.push({item_id:item.item_id , title: t })
                     } else { //not found
                         hydratedItems.push({item_id: item.item_id, title: 'Item not found.'});
                     }
@@ -202,6 +203,7 @@ var displayItems = function(collectionId, itemList){
     }
     
     table.clear();
+
     $.each((itemList),function(index,item){
         var deleteButtonString = '<button onclick=\'deleteCollectionItem("' + item.item_id.replace(/"/g,'') + '", ' + collectionId +  ')\'>Delete</button>';
         table.row.add({ID: item.item_id, Title: item.title,

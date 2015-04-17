@@ -1,8 +1,5 @@
-var BASEURL = "http://collections-api.lib.harvard.edu/v2/";
-//var BASEURL = "<BASE URL FOR COLLECTIONS API>";
+var BASEURL = "http://api.lib.harvard.edu/v2/";
 var collections;
-//var items = [];
-
 
 $('#put').click(function(){
     updateErrorLabel('');

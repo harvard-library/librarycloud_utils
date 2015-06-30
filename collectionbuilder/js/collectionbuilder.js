@@ -6,6 +6,9 @@ $(function(){
 	dispatcher.on("collection:select", function() { 
 					lcCollectionItems.selectCollection(selectedCollection.attributes.identifier);
 				});
+	dispatcher.on("collectionitems:refresh", function() { 
+					LCCollectionItemListView.render();
+				});
 
 
 	/************************** Models **************************/
@@ -43,8 +46,7 @@ $(function(){
 			this.collection_id = collection_id;
 			this.fetch({
 				success: function(collection, response, options) {
-					console.log(lcCollectionItems);
-					LCCollectionItemListView.render();							
+					dispatcher.trigger("collectionitems:refresh");					
 				}
 			});
 		},

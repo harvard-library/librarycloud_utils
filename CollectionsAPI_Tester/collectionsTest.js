@@ -87,7 +87,7 @@ var saveNew = function(title, abstract){
      $.ajax({ 
          type: "POST",
          headers: getHeader(),
-         url: BASEURL + "collections.json",
+         url: BASEURL + "collections",
          data: JSON.stringify({title: title, abstract: abstract}, null, 2),
          dataType: 'json',
          success: function(data){        
@@ -103,7 +103,7 @@ var getCollectionData= function(){
      $.ajax({ 
          type: "GET",
          dataType: "json",
-         url: BASEURL + "collections.json",
+         url: BASEURL + "collections",
          success: function(data){        
             collections = data;
             displayCollections(data);

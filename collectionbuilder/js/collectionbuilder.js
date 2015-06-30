@@ -1,14 +1,20 @@
 
 $(function(){
 
-	/************************** Events **************************/
+	/************************** Dispatch **************************/
 	var dispatcher = _.clone(Backbone.Events)
+	dispatcher.on("collection:select", function() { 
+					lcCollectionItems.selectCollection(selectedCollection.attributes.identifier);
+				});
+
 
 	/************************** Models **************************/
 	var LCCollection = Backbone.Model.extend({
 		defaults: function() {
 			return {
-				title: "New collection"
+				title: "",
+				identifier: "",
+				abstract: "",
 			}
 		}
 	});
@@ -17,11 +23,40 @@ $(function(){
 		model: LCCollection,
 		url: 'http://api.lib.harvard.edu/v2/collections',
 	});
+	
+	var LCCollectionItem = Backbone.Model.extend({
+		defaults: function() {
+			return { }
+		}
+	});
+
+	var LCCollectionItemList = Backbone.Collection.extend({
+		model: LCCollectionItem,
+		url: function() { 
+			return 'http://api.lib.harvard.edu/v2/collections/' + this.collection_id + '/items';				
+		},
+		initialize: function(options) {
+			options || (options = {});
+			this.collection_id = options.collection_id;
+		},
+		selectCollection : function(collection_id) {
+			this.collection_id = collection_id;
+			this.fetch({
+				success: function(collection, response, options) {
+					console.log(lcCollectionItems);
+					LCCollectionItemListView.render();							
+				}
+			});
+		},
+	});
+
 
 	var lcCollections = new LCCollectionList;
-
+	var lcCollectionItems = new LCCollectionItemList;
 
 	/************************** Views **************************/
+	
+	/* Display a single collection in the list and handle selecting a collection */
 	var LCCollectionView = Backbone.View.extend({
 
 		tagName : 'li',
@@ -33,7 +68,7 @@ $(function(){
 		},
 
 		initialize: function() {
-			this.listenTo(this.model, "change", this.render);
+			// this.listenTo(this.model, "change", this.render);
 		},
 
 		render : function() {
@@ -42,40 +77,80 @@ $(function(){
 		},
 
 		selectCollection : function() {
-			console.log("Selected collection");
-			trigger()
+			selectedCollection.set({
+				title: this.model.get("title"),
+				abstract: this.model.get("abstract"),
+				identifier: this.model.get("identifier"),
+			});
+			dispatcher.trigger("collection:select");
 		}
 
-	})	
+	});	
 
+	/* Display a list of collections */
 	var LCCollectionListView = new Backbone.CollectionView({
 		  el : $( "ul#collection-list" ),
 		  selectable : false,
 		  collection : lcCollections,
 		  modelView : LCCollectionView,
-
-		  initialize: function() {
-		  	lcCollections.fetch();
-		  }
 	} );
 
-	/************************** Routes **************************/
-	var Workspace = Backbone.Router.extend({
+	/* Display collection summary information */
+	var LCCollectionDetailTitleView =  Backbone.View.extend({
+	  	el : $( "#collection-detail" ),
+		template : _.template('\
+<div class="panel-heading">\
+	<h3 class="panel-title" id="collection-title"><%= title %> <small><%= identifier %></small></h3>\
+</div>\
+<div id="sections-document" class="panel-body">\
+	<strong>Abstract:</strong> <%= abstract %> \
+	<p/><p>\
+	<button type="button" class="btn btn-default btn-xs">Edit</button> <button type="button" class="btn btn-default btn-xs">Add Items</button>\
+	</p>\
+</div>\
+'),
 
-	  routes: {
-	    "help":       	            "help",    // #help
-	    "collection/:query":        "collection",  // #search/kiwis
-	  },
+		initialize : function() {
+		    this.listenTo(this.model, "change", this.render);
+		},
 
-	  help: function() {
-	    console.log('help');
-	  },
-
-	  collection: function(query) {
-	    console.log("collection" + query);
-	  }
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
 
 	});
+
+	/* Display an item from the selected collection */
+	var LCCollectionItemView = Backbone.View.extend({
+
+		tagName : 'tr',
+		template : _.template("<td>Name</td><td><%= item_id %></td><td>View Remove</td>"),
+
+		events: {
+			// "click a" : "selectCollection",
+		},
+
+		initialize: function() {
+			// this.listenTo(this.model, "change", this.render);
+		},
+
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+	});	
+
+
+	/* Display the list of items from the selected collection */
+	var LCCollectionItemListView = new Backbone.CollectionView({
+		  el : $( "table#item-list" ),
+		  selectable : false,
+		  collection : lcCollectionItems,
+		  modelView : LCCollectionItemView,
+	} );
+
+
 
 	/************************** Initialization **************************/
 	
@@ -83,6 +158,13 @@ $(function(){
 	Backbone.history.start() 
   	lcCollections.fetch();
 	LCCollectionListView.render();
+ //  	lcCollectionItems.fetch();
+	// LCCollectionItemListView.render();
+
+	var selectedCollection = new LCCollection({title : "Collection Detail View Goes Here"});
+	
+	var titleView = new LCCollectionDetailTitleView({model:selectedCollection});
+	titleView.render();
 
 });
 

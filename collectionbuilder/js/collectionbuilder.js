@@ -3,9 +3,13 @@ $(function(){
 
 	/************************** Dispatch **************************/
 	var dispatcher = _.clone(Backbone.Events)
+
+	/* Notify the list of collection items to update, since the selected collection has changed */
 	dispatcher.on("collection:select", function() { 
 					lcCollectionItems.selectCollection(selectedCollection.attributes.identifier);
 				});
+
+	/* Notify collection item list view to update, once the items for a collection have been loaded */
 	dispatcher.on("collectionitems:refresh", function() { 
 					LCCollectionItemListView.render();
 				});
@@ -27,9 +31,53 @@ $(function(){
 		url: 'http://api.lib.harvard.edu/v2/collections',
 	});
 	
+	var LCItem = Backbone.Model.extend({
+		defaults: function() {
+			return { 
+				title: "Item loading",
+			}
+		},
+
+		url: function() { 
+			return 'http://api.lib.harvard.edu/v2/items/' + this.id + ".dc";
+		},
+
+		initialize: function(options) {
+			options || (options = {});
+			this.id = options.id;
+			this.fetch();
+		},
+
+		parse: function(response, options) {
+			console.log(response);
+			return response;
+		}
+	});
+
+
 	var LCCollectionItem = Backbone.Model.extend({
 		defaults: function() {
-			return { }
+			return { 
+				title: "Loading",
+				item: {},
+			}
+		},
+
+		idAttribute: "item_id",
+
+		initialize: function(options) {
+			options || (options = {});
+			this.collection_id = options.collection_id;
+			this.item = new LCItem({id: this.id});
+			this.listenTo(this.item, "change", this.updateCollectionItem);
+		},
+
+		updateCollectionItem : function() {
+			this.set({title : this.item.get("title")});
+		},
+
+		parse: function(response, options) {
+			return response;
 		}
 	});
 
@@ -101,16 +149,16 @@ $(function(){
 	var LCCollectionDetailTitleView =  Backbone.View.extend({
 	  	el : $( "#collection-detail" ),
 		template : _.template('\
-<div class="panel-heading">\
-	<h3 class="panel-title" id="collection-title"><%= title %> <small><%= identifier %></small></h3>\
-</div>\
-<div id="sections-document" class="panel-body">\
-	<strong>Abstract:</strong> <%= abstract %> \
-	<p/><p>\
-	<button type="button" class="btn btn-default btn-xs">Edit</button> <button type="button" class="btn btn-default btn-xs">Add Items</button>\
-	</p>\
-</div>\
-'),
+			<div class="panel-heading">\
+				<h3 class="panel-title" id="collection-title"><%= title %> <small><%= identifier %></small></h3>\
+			</div>\
+			<div id="sections-document" class="panel-body">\
+				<strong>Abstract:</strong> <%= abstract %> \
+				<p/><p>\
+				<button type="button" class="btn btn-default btn-xs">Edit</button> <button type="button" class="btn btn-default btn-xs">Add Items</button>\
+				</p>\
+			</div>\
+			'),
 
 		initialize : function() {
 		    this.listenTo(this.model, "change", this.render);
@@ -127,14 +175,15 @@ $(function(){
 	var LCCollectionItemView = Backbone.View.extend({
 
 		tagName : 'tr',
-		template : _.template("<td>Name</td><td><%= item_id %></td><td>View Remove</td>"),
+		template : _.template("<td><%= title %></td><td><%= item_id %></td><td>View Remove</td>"),
 
 		events: {
 			// "click a" : "selectCollection",
 		},
 
 		initialize: function() {
-			// this.listenTo(this.model, "change", this.render);
+			this.listenTo(this.model, "change", this.render);
+			this.listenTo(this.model, "change", function() { console.log("caught event");});
 		},
 
 		render : function() {
@@ -146,10 +195,10 @@ $(function(){
 
 	/* Display the list of items from the selected collection */
 	var LCCollectionItemListView = new Backbone.CollectionView({
-		  el : $( "table#item-list" ),
-		  selectable : false,
-		  collection : lcCollectionItems,
-		  modelView : LCCollectionItemView,
+		el : $( "table#item-list" ),
+		selectable : false,
+		collection : lcCollectionItems,
+		modelView : LCCollectionItemView,
 	} );
 
 

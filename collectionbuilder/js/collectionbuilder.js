@@ -5,13 +5,23 @@ $(function(){
 	var dispatcher = _.clone(Backbone.Events)
 
 	/* Notify the list of collection items to update, since the selected collection has changed */
-	dispatcher.on("collection:select", function() { 
-					lcCollectionItems.selectCollection(selectedCollection.attributes.identifier);
+	dispatcher.on("collection:select", function(e) { 
+					lcCollectionItems.selectCollection(e.collection_id);
 				});
 
 	/* Notify collection item list view to update, once the items for a collection have been loaded */
 	dispatcher.on("collectionitems:refresh", function() { 
 					LCCollectionItemListView.render();
+				});
+
+	/* Notify the search results to run a search */
+	dispatcher.on("search:run", function(e) { 
+					lcSearchResultItems.setQuery(e.query);
+				});
+
+	/* Notify the search results list to update, once the search has completed */
+	dispatcher.on("search:refresh", function(e) { 
+					LCSearchItemListView.render();
 				});
 
 
@@ -47,12 +57,33 @@ $(function(){
 			this.id = options.id;
 			this.fetch();
 		},
-
-		parse: function(response, options) {
-			console.log(response);
-			return response;
-		}
 	});
+
+	var LCItemSearchResultsList = Backbone.Collection.extend({
+		model: LCItem,
+		url: function() { 
+			return 'http://api.lib.harvard.edu/v2/items.dc?q=' + this.query;
+		},
+
+		initialize: function(options) {
+			options || (options = {});
+			this.query = options.query;
+		},
+
+		parse: function (response, options) {
+			// TODO: Fix error case is this is null
+			return (response.items.dc != null) ? response.items.dc : {};
+		},
+
+		setQuery : function(query) {
+			this.query = query;
+			this.fetch({
+				success: function(collection, response, options) {
+					dispatcher.trigger("search:refresh");					
+				}
+			});
+		}
+	})
 
 
 	var LCCollectionItem = Backbone.Model.extend({
@@ -73,12 +104,9 @@ $(function(){
 		},
 
 		updateCollectionItem : function() {
-			this.set({title : this.item.get("title")});
+			this.set({title : this.item.get("title")})	
 		},
 
-		parse: function(response, options) {
-			return response;
-		}
 	});
 
 	var LCCollectionItemList = Backbone.Collection.extend({
@@ -100,9 +128,10 @@ $(function(){
 		},
 	});
 
-
+	/* Define variables for the collection lists */
 	var lcCollections = new LCCollectionList;
 	var lcCollectionItems = new LCCollectionItemList;
+	var lcSearchResultItems = new LCItemSearchResultsList;
 
 	/************************** Views **************************/
 	
@@ -132,7 +161,7 @@ $(function(){
 				abstract: this.model.get("abstract"),
 				identifier: this.model.get("identifier"),
 			});
-			dispatcher.trigger("collection:select");
+			dispatcher.trigger("collection:select", {collection_id: this.model.get("identifier")});
 		}
 
 	});	
@@ -183,7 +212,6 @@ $(function(){
 
 		initialize: function() {
 			this.listenTo(this.model, "change", this.render);
-			this.listenTo(this.model, "change", function() { console.log("caught event");});
 		},
 
 		render : function() {
@@ -201,6 +229,45 @@ $(function(){
 		modelView : LCCollectionItemView,
 	} );
 
+	/* Display the search form */
+	var LCSearchFormView = Backbone.View.extend({
+		el : $("#collection-add form.search-form"),
+		template : _.template($('#collection-add form.search-form').html()),
+		events: {
+			"submit" : "search",
+		},
+		search : function(e) {
+			dispatcher.trigger("search:run", {query: this.$el.find("input").val()});
+		}
+	});
+
+	/* Display a single item in the search results */
+	var LCSearchItemView = Backbone.View.extend({
+		tagName : 'tr',
+		template : _.template("<td><%= title %></td><td><%= identifier %></td><td>Add to collection</td>"),
+
+		events: {
+			// "click a" : "selectCollection",
+		},
+
+		initialize: function() {
+			this.listenTo(this.model, "change", this.render);
+		},
+
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+	});
+
+	/* Display the search results */
+	var LCSearchItemListView = new Backbone.CollectionView({
+		el : $( "table#search-results-list" ),
+		selectable : false,
+		collection : lcSearchResultItems,
+		modelView : LCSearchItemView,
+	} );
+
 
 
 	/************************** Initialization **************************/
@@ -209,13 +276,12 @@ $(function(){
 	Backbone.history.start() 
   	lcCollections.fetch();
 	LCCollectionListView.render();
- //  	lcCollectionItems.fetch();
-	// LCCollectionItemListView.render();
 
-	var selectedCollection = new LCCollection({title : "Collection Detail View Goes Here"});
-	
+	var selectedCollection = new LCCollection({title : "Collection Detail View Goes Here"});	
 	var titleView = new LCCollectionDetailTitleView({model:selectedCollection});
 	titleView.render();
+
+	var searchView = new LCSearchFormView();
 
 });
 

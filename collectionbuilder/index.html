@@ -39,11 +39,20 @@
           </div>
         </div>
         <div class="col-md-8 ">
-           <div class="panel panel-default" id="collection-detail">
-              <div class="panel-heading">
-                <h3 class="panel-title" id="collection-title">Collection Detail
-              </div>
-              <div id="sections-document" class="panel-body"> </div>
+           <div class="panel panel-default" id="collection-detail">      
+             <script type="text/template" id="t-collection-detail">
+                <div class="panel-heading">
+                  <h3 class="panel-title" id="collection-title"><%= title %> <small><%= identifier %></small></h3>
+                </div>
+                <div id="sections-document" class="panel-body">
+                  <strong>Abstract:</strong> <%= abstract %> 
+                  <p/><p>
+                  <button type="button" class="btn btn-default ">Edit</button>
+                  <button type="button" class="btn btn-default " data-toggle="modal" data-target="#collection-add">Add Items</button>
+                  <button type="button" class="btn btn-danger" id="delete-collection">Delete Collection</button>
+                  </p>
+                </div>
+              </script>
             </div>
           <table id="item-list" class="table table-striped"> 
             <thead>
@@ -79,7 +88,7 @@
             </form>             
             <div id="search-results-count">
               <script type="test/template" id="t-search-results-count">
-                <h5><%= count %> records found</h5>
+                <h5><%= count %> records found (<%= page_start %> to <%= page_end %> shown)</h5>
               </script>
             </div>
             <table id="search-results-list" class="table table-striped"> 
@@ -97,8 +106,8 @@
               <script type="test/template" id="t-search-pagination">
                 <nav>
                   <ul class="pager">
-                    <li class="<%= show_previous %>"><a href="#" aria-label="Previous"><span aria-hidden="true">Previous</span></a></li>
-                    <li class="<%= show_next %>"><a href="#" aria-label="Next"><span aria-hidden="true">Next</span></a></li>
+                    <li class="previous <%= show_previous %>"><a href="#" aria-label="Previous">Previous</a></li>
+                    <li class="next <%= show_next %>"><a href="#" aria-label="Next">Next</a></li>
                   </ul>
                 </nav>              
               </script>

@@ -64,24 +64,31 @@ $(function(){
 	var LCItemSearchResultsList = Backbone.Collection.extend({
 		model: LCItem,
 		url: function() { 
-			return 'http://api.lib.harvard.edu/v2/items.dc?q=' + this.query;
-		},
-
-		initialize: function(options) {
-			options || (options = {});
-			this.query = options.query;
+			return 'http://api.lib.harvard.edu/v2/items.dc?q=' 
+						+ this.query 
+						+ (this.query_start ? "&start=" + this.query_start : "");
 		},
 
 		parse: function (response, options) {
 			this.attributes || (this.attributes = {});
+			console.log(response);
 			this.attributes.count = response.pagination.numFound;
 			this.attributes.limit = response.pagination.limit;
 			this.attributes.start = response.pagination.start;
-			return (response.items != null) ? response.items.dc : {};
+			return (response.items != null) ? response.items.dc : [];
 		},
 
 		setQuery : function(query) {
 			this.query = query;
+			this.fetch({
+				success: function(collection, response, options) {
+					dispatcher.trigger("search:refresh");					
+				}
+			});
+		},
+
+		setPage : function(start) {
+			this.query_start = start;
 			this.fetch({
 				success: function(collection, response, options) {
 					dispatcher.trigger("search:refresh");					
@@ -182,19 +189,7 @@ $(function(){
 	/* Display collection summary information */
 	var LCCollectionDetailTitleView =  Backbone.View.extend({
 	  	el : $( "#collection-detail" ),
-		template : _.template('\
-			<div class="panel-heading">\
-				<h3 class="panel-title" id="collection-title"><%= title %> <small><%= identifier %></small></h3>\
-			</div>\
-			<div id="sections-document" class="panel-body">\
-				<strong>Abstract:</strong> <%= abstract %> \
-				<p/><p>\
-				<button type="button" class="btn btn-default ">Edit</button>\
-				<button type="button" class="btn btn-default " data-toggle="modal" data-target="#collection-add">Add Items</button>\
-				<button type="button" class="btn btn-danger" id="delete-collection">Delete Collection</button>\
-				</p>\
-			</div>\
-			'),
+	  	template : _.template($('#t-collection-detail').html()),
 
 		initialize : function() {
 		    this.listenTo(this.model, "change", this.render);
@@ -204,7 +199,6 @@ $(function(){
 			this.$el.html(this.template(this.model.attributes));
     		return this;
 		},
-
 	});
 
 	/* Display an item from the selected collection */
@@ -281,21 +275,34 @@ $(function(){
 		template : _.template($('#t-search-pagination').html()),
 
 		events: {
-			// "click a" : "selectCollection",
+			"click .next" : "nextPage",
+			"click .previous" : "previousPage",
+		},
+
+		previousPage : function() {
+			if (this.show_previous()) {
+				this.model.setPage(this.model.attributes.start - this.model.attributes.limit);
+			}
+		},
+		
+		nextPage : function() {
+			if (this.show_next()) {
+				this.model.setPage(this.model.attributes.start + this.model.attributes.limit);				
+			}
 		},
 
 		show_previous : function() {
-			return this.model.attributes.start == 0 ? "disabled" : "";
+			return this.model.attributes.start > 0;
 		},
 		
 		show_next : function() {
-			return (this.model.attributes.start + this.model.attributes.limit) >= this.model.attributes.count ? "disabled" : "";
+			return (this.model.attributes.start + this.model.attributes.limit) < this.model.attributes.count;
 		},
 
 		render : function() {
 			var a = _.extend({
-								show_previous: this.show_previous(), 
-								show_next: this.show_next()
+								show_previous: this.show_previous() ? "" : "disabled", 
+								show_next: this.show_next() ? "" : "disabled"
 							},
 							this.model.attributes);
 			this.$el.html(this.template(a));
@@ -308,7 +315,12 @@ $(function(){
 		el : $("#search-results-count"),
 		template : _.template($('#t-search-results-count').html()),
 		render : function() {
-			this.$el.html(this.template(this.model.attributes));
+			this.$el.html(this.template(_.extend(
+				{
+					page_end: Math.min(this.model.attributes.start + this.model.attributes.limit, this.model.attributes.count),
+					page_start: Math.min(this.model.attributes.start + 1, this.model.attributes.count),
+				}, 
+				this.model.attributes)));
     		return this;
 		},
 	});

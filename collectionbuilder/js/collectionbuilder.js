@@ -22,6 +22,8 @@ $(function(){
 	/* Notify the search results list to update, once the search has completed */
 	dispatcher.on("search:refresh", function(e) { 
 					LCSearchItemListView.render();
+					searchPaginationView.render();
+					searchResultCountView.render();
 				});
 
 
@@ -71,8 +73,11 @@ $(function(){
 		},
 
 		parse: function (response, options) {
-			// TODO: Fix error case is this is null
-			return (response.items.dc != null) ? response.items.dc : {};
+			this.attributes || (this.attributes = {});
+			this.attributes.count = response.pagination.numFound;
+			this.attributes.limit = response.pagination.limit;
+			this.attributes.start = response.pagination.start;
+			return (response.items != null) ? response.items.dc : {};
 		},
 
 		setQuery : function(query) {
@@ -184,7 +189,9 @@ $(function(){
 			<div id="sections-document" class="panel-body">\
 				<strong>Abstract:</strong> <%= abstract %> \
 				<p/><p>\
-				<button type="button" class="btn btn-default btn-xs">Edit</button> <button type="button" class="btn btn-default btn-xs">Add Items</button>\
+				<button type="button" class="btn btn-default ">Edit</button>\
+				<button type="button" class="btn btn-default " data-toggle="modal" data-target="#collection-add">Add Items</button>\
+				<button type="button" class="btn btn-danger" id="delete-collection">Delete Collection</button>\
 				</p>\
 			</div>\
 			'),
@@ -268,6 +275,43 @@ $(function(){
 		modelView : LCSearchItemView,
 	} );
 
+	/* Display the pagination for the search results */
+	var LCSearchItemListPaginationView = Backbone.View.extend({
+		el : $("#search-pagination"),
+		template : _.template($('#t-search-pagination').html()),
+
+		events: {
+			// "click a" : "selectCollection",
+		},
+
+		show_previous : function() {
+			return this.model.attributes.start == 0 ? "disabled" : "";
+		},
+		
+		show_next : function() {
+			return (this.model.attributes.start + this.model.attributes.limit) >= this.model.attributes.count ? "disabled" : "";
+		},
+
+		render : function() {
+			var a = _.extend({
+								show_previous: this.show_previous(), 
+								show_next: this.show_next()
+							},
+							this.model.attributes);
+			this.$el.html(this.template(a));
+    		return this;
+		},
+	});
+
+	/* Display the number of results for the search results */
+	var LCSearchItemListResultCountView = Backbone.View.extend({
+		el : $("#search-results-count"),
+		template : _.template($('#t-search-results-count').html()),
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+	});
 
 
 	/************************** Initialization **************************/
@@ -282,6 +326,8 @@ $(function(){
 	titleView.render();
 
 	var searchView = new LCSearchFormView();
+	var searchPaginationView = new LCSearchItemListPaginationView({model: lcSearchResultItems});
+	var searchResultCountView = new LCSearchItemListResultCountView({model: lcSearchResultItems});
 
 });
 

@@ -1,4 +1,9 @@
-#add-items	#item-search
+#add-items	.search-form .input-group
 {
 	width: 100%;
+}
+
+#sections-document #delete-collection
+{
+	float: right;
 }

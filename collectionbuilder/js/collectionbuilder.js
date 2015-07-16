@@ -14,8 +14,13 @@ $(function(){
 					LCCollectionItemListView.render();
 				});
 
+	/* Let's add an item to a collection! */
+	dispatcher.on("collectionitems:add", function(e) { 
+					lcCollectionItems.addItem(e.item);
+				});
+
 	/* Notify the search results to run a search */
-	dispatcher.on("search:run", function(e) { 
+	dispatcher.on("search:run", function(e) { 		
 					lcSearchResultItems.setQuery(e.query);
 				});
 
@@ -46,7 +51,7 @@ $(function(){
 	var LCItem = Backbone.Model.extend({
 		defaults: function() {
 			return { 
-				title: "Item loading",
+				title: "",
 			}
 		},
 
@@ -61,8 +66,47 @@ $(function(){
 		},
 	});
 
+	var LCSearchResultItem = Backbone.Model.extend({
+		defaults: function() {
+			return { 
+				title: "",
+				library_cloud_id: "",
+				primary_title: "",
+				secondary_title: "",
+				in_collection: false,
+			}
+		},
+
+		getLibraryCloudId : function(id) {
+			var lcIdLine = _.find(_.flatten([id]),function(s) { return s.indexOf("librarycloud") != -1; });
+			return lcIdLine.replace("librarycloud: ","");			
+		},
+
+		initialize: function(options) {
+			this.item = new LCItem({id: this.getLibraryCloudId(this.get("identifier"))});
+			this.listenTo(this.item, "change", this.updateSearchResultItem);
+		},
+
+		inCurrentCollection : function() {
+			var id = this.item.id;
+			var exists = lcCollectionItems.find(function(a) {
+				return (a.item.id == id);
+			});
+			return (exists != undefined);
+		},
+
+		updateSearchResultItem: function() {
+			this.set({
+				library_cloud_id: this.item.id,
+				primary_title: _.first(_.flatten([this.item.get("title")])),
+				secondary_title: _.rest(_.flatten([this.item.get("title")])),
+				in_collection: this.inCurrentCollection(),
+			});
+		}
+	});
+
 	var LCItemSearchResultsList = Backbone.Collection.extend({
-		model: LCItem,
+		model: LCSearchResultItem,
 		url: function() { 
 			return 'http://api.lib.harvard.edu/v2/items.dc?q=' 
 						+ this.query 
@@ -71,7 +115,6 @@ $(function(){
 
 		parse: function (response, options) {
 			this.attributes || (this.attributes = {});
-			console.log(response);
 			this.attributes.count = response.pagination.numFound;
 			this.attributes.limit = response.pagination.limit;
 			this.attributes.start = response.pagination.start;
@@ -123,13 +166,16 @@ $(function(){
 
 	var LCCollectionItemList = Backbone.Collection.extend({
 		model: LCCollectionItem,
+		
 		url: function() { 
 			return 'http://api.lib.harvard.edu/v2/collections/' + this.collection_id + '/items';				
 		},
+
 		initialize: function(options) {
 			options || (options = {});
 			this.collection_id = options.collection_id;
 		},
+
 		selectCollection : function(collection_id) {
 			this.collection_id = collection_id;
 			this.fetch({
@@ -138,6 +184,11 @@ $(function(){
 				}
 			});
 		},
+
+		addItem : function(item) {
+			this.create({item_id: item.id});
+		}
+
 	});
 
 	/* Define variables for the collection lists */
@@ -205,7 +256,7 @@ $(function(){
 	var LCCollectionItemView = Backbone.View.extend({
 
 		tagName : 'tr',
-		template : _.template("<td><%= title %></td><td><%= item_id %></td><td>View Remove</td>"),
+	  	template : _.template($('#t-collection-item').html()),
 
 		events: {
 			// "click a" : "selectCollection",
@@ -238,17 +289,20 @@ $(function(){
 			"submit" : "search",
 		},
 		search : function(e) {
-			dispatcher.trigger("search:run", {query: this.$el.find("input").val()});
+			dispatcher.trigger("search:run", {
+											  query: this.$el.find("input").val(),
+											  collection : this.model,
+											});
 		}
 	});
 
 	/* Display a single item in the search results */
 	var LCSearchItemView = Backbone.View.extend({
 		tagName : 'tr',
-		template : _.template("<td><%= title %></td><td><%= identifier %></td><td>Add to collection</td>"),
+		template : _.template($('#t-search-results-item').html()),
 
 		events: {
-			// "click a" : "selectCollection",
+			"click button" : "addItemToCollection",
 		},
 
 		initialize: function() {
@@ -259,6 +313,14 @@ $(function(){
 			this.$el.html(this.template(this.model.attributes));
     		return this;
 		},
+
+		addItemToCollection : function() {
+			dispatcher.trigger("collectionitems:add", {
+								  item: this.model.item,
+								  collection : selectedCollection,
+								});
+		}
+
 	});
 
 	/* Display the search results */
@@ -333,11 +395,11 @@ $(function(){
   	lcCollections.fetch();
 	LCCollectionListView.render();
 
-	var selectedCollection = new LCCollection({title : "Collection Detail View Goes Here"});	
+	var selectedCollection = new LCCollection();	
 	var titleView = new LCCollectionDetailTitleView({model:selectedCollection});
 	titleView.render();
 
-	var searchView = new LCSearchFormView();
+	var searchView = new LCSearchFormView({model:selectedCollection});
 	var searchPaginationView = new LCSearchItemListPaginationView({model: lcSearchResultItems});
 	var searchResultCountView = new LCSearchItemListResultCountView({model: lcSearchResultItems});
 

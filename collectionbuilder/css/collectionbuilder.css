@@ -3,7 +3,18 @@
 	width: 100%;
 }
 
+#add-items td.title
+{
+	width: 60%;
+}
+
 #sections-document #delete-collection
 {
 	float: right;
 }
+
+#item-list td.title
+{
+	width: 60%;
+}
+

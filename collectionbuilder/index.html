@@ -42,15 +42,20 @@
            <div class="panel panel-default" id="collection-detail">      
              <script type="text/template" id="t-collection-detail">
                 <div class="panel-heading">
-                  <h3 class="panel-title" id="collection-title"><%= title %> <small><%= identifier %></small></h3>
+                  <h3 class="panel-title" id="collection-title">
+                    <% if (identifier) { %>
+                      <%= title %> <small><%= identifier %></small></h3>
+                    <% } else { %>
+                      Select a collection to view or edit
+                    <% } %>
                 </div>
                 <div id="sections-document" class="panel-body">
-                  <strong>Abstract:</strong> <%= abstract %> 
-                  <p/><p>
-                  <button type="button" class="btn btn-default ">Edit</button>
-                  <button type="button" class="btn btn-default " data-toggle="modal" data-target="#collection-add">Add Items</button>
-                  <button type="button" class="btn btn-danger" id="delete-collection">Delete Collection</button>
-                  </p>
+                  <% if (abstract) { %><p><strong>Abstract: </strong><%= abstract %></p><% } %>
+                  <% if (identifier) { %>
+                    <button type="button" class="btn btn-default ">Edit</button>
+                    <button type="button" class="btn btn-default " data-toggle="modal" data-target="#collection-add">Add Items</button>
+                    <button type="button" class="btn btn-danger" id="delete-collection">Delete Collection</button>
+                  <% } %>
                 </div>
               </script>
             </div>
@@ -62,7 +67,13 @@
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody> </tbody>
+            <tbody>
+              <script type="test/template" id="t-collection-item">
+                <td class="title"><%= title %></td>
+                <td><%= item_id %></td>
+                <td>View Remove</td>
+              </script>
+            </tbody>
           </table>
         </div>
       </div>
@@ -98,6 +109,17 @@
                   <th>ID</th>
                   <th>Action</th>
                 </tr>
+                <script type="test/template" id="t-search-results-item">
+                  <td class="title"><%= primary_title %><br/><small><%= secondary_title %></small></td>
+                  <td><%= library_cloud_id %></td>
+                  <td><% if (in_collection) { %>
+                        <em>Already in collection</em>
+                      <% } else { %>
+                        <button type="button" class="btn btn-primary btn-xs">Add to collection</button>
+                      <% } %>
+                  </td>
+
+                </script>
               </thead>
               <tbody>
               </tbody>

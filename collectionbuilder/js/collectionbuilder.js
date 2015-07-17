@@ -9,6 +9,26 @@ $(function(){
 					lcCollectionItems.selectCollection(e.collection_id);
 				});
 
+	/* Delete a collection */
+	dispatcher.on("collection:remove", function(e) { 
+					lcCollections.remove(e.collection);
+					selectedCollection = new LCCollection();
+					lcCollectionItems.reset(null);	
+					e.collection.destroy({headers: {'X-LibraryCloud-API-Key': '999999999'},
+										  success: function() {
+					  						dispatcher.trigger("collection:refresh");
+										  }
+										});
+				});
+
+	/* Refresh all views that display collections */
+	dispatcher.on("collection:refresh", function(e) { 
+					titleView = new LCCollectionDetailTitleView({model:selectedCollection});
+					titleView.render();
+					LCCollectionListView.render();
+					LCCollectionItemListView.render();					
+				});
+
 	/* Notify collection item list view to update, once the items for a collection have been loaded */
 	dispatcher.on("collectionitems:refresh", function() { 
 					LCCollectionItemListView.render();
@@ -53,12 +73,30 @@ $(function(){
 				identifier: "",
 				abstract: "",
 			}
-		}
+		},
+
+		url: function() {
+			return 'http://api.lib.harvard.edu/v2/collections/' + this.id;
+		},
+
+		idAttribute: "identifier",
+
+	    sync: function(command, model, options) {
+	    	console.log("Doing a synch");
+	        return Backbone.sync.apply(this, arguments);
+	    },
+
 	});
 
 	var LCCollectionList = Backbone.Collection.extend({
 		model: LCCollection,
 		url: 'http://api.lib.harvard.edu/v2/collections',
+
+	    sync: function(command, model, options) {
+	    	console.log("Doing a synch collection");
+	        return Backbone.sync.apply(this, arguments);
+	    },
+
 	});
 	
 	var LCItem = Backbone.Model.extend({
@@ -275,7 +313,7 @@ $(function(){
 		},
 
 		initialize: function() {
-			// this.listenTo(this.model, "change", this.render);
+			this.listenTo(this.model, "change", this.render);
 		},
 
 		render : function() {
@@ -307,6 +345,10 @@ $(function(){
 	  	el : $( "#collection-detail" ),
 	  	template : _.template($('#t-collection-detail').html()),
 
+		events: {
+			"click button.delete" : "deleteCollection",
+		},
+
 		initialize : function() {
 		    this.listenTo(this.model, "change", this.render);
 		},
@@ -315,6 +357,12 @@ $(function(){
 			this.$el.html(this.template(this.model.attributes));
     		return this;
 		},
+
+		deleteCollection: function() {
+			dispatcher.trigger("collection:remove", {
+								  collection: this.model,
+								});
+		}
 	});
 
 	/* Display collection summary information */

@@ -82,7 +82,6 @@ $(function(){
 		idAttribute: "identifier",
 
 	    sync: function(command, model, options) {
-	    	console.log("Doing a synch");
 	        return Backbone.sync.apply(this, arguments);
 	    },
 
@@ -93,7 +92,6 @@ $(function(){
 		url: 'http://api.lib.harvard.edu/v2/collections',
 
 	    sync: function(command, model, options) {
-	    	console.log("Doing a synch collection");
 	        return Backbone.sync.apply(this, arguments);
 	    },
 
@@ -161,7 +159,6 @@ $(function(){
 		},
 
 		updateSearchResultItem: function() {
-			console.log("Updating item");
 			this.set({
 				library_cloud_id: this.item.id,
 				primary_title: _.first(_.flatten([this.item.get("title")])),
@@ -306,7 +303,7 @@ $(function(){
 
 		tagName : 'li',
 		className : 'list-group-item',
-		template : _.template("<a href='#<%= identifier %>'><%= title %></a"),
+		template : _.template("<a href='#<%- identifier %>'><%- title %></a>"),
 
 		events: {
 			"click a" : "selectCollection",
@@ -359,9 +356,16 @@ $(function(){
 		},
 
 		deleteCollection: function() {
-			dispatcher.trigger("collection:remove", {
-								  collection: this.model,
-								});
+            bootbox.confirm("Are you sure you want to delete the collection \"" +
+            	this.model.get("title") + "\"? This action cannot be undone.", 
+            	_.bind(function(result) {
+            		if (result) {
+							dispatcher.trigger("collection:remove", {
+												  collection: this.model,
+												});
+            		}
+            	}, this)
+            );
 		}
 	});
 

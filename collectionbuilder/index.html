@@ -35,6 +35,9 @@
             <div class="panel-body">
               <ul id="collection-list" class="list-group">
               </ul>
+              <script type="text/template" id="t-collection-list">
+                <a href='#<%- identifier %>'><%- title %></a>
+              </script>
             </div>
           </div>
         </div>
@@ -210,6 +213,7 @@
     <script src="js/backbone.js"></script>
     <script src="js/backbone.localStorage-min.js"></script>
     <script src="js/backbone.collectionView.min.js"></script>
+    <script src="js/bootbox.min.js"></script>
     <script src="js/collectionbuilder.js"></script>
   </body>
 </html>

@@ -20,8 +20,13 @@ $(function(){
 					e.search_result_item.item.trigger("change", e.search_result_item.item);
 				});
 
+	/* Remove and item from a collection */
+	dispatcher.on("collectionitems:remove", function(e) { 
+					lcCollectionItems.removeItem(e.item);
+				});
+
 	/* View an item in a collection! */
-	dispatcher.on("collectionitem:view", function(e) { 
+	dispatcher.on("collectionitems:view", function(e) { 
 					var detailView = new LCCollectionItemDetailView({model:new LCItem({id : e.item.id})});
 					detailView.render();
 				});
@@ -173,7 +178,7 @@ $(function(){
 	var LCCollectionItem = Backbone.Model.extend({
 		defaults: function() {
 			return { 
-				title: "Loading",
+				title: "",
 				item: {},
 			}
 		},
@@ -199,13 +204,19 @@ $(function(){
 		   dictionaries instead of a single dictionary, and exclude 
 		   LCCollectionItem attributes other than the item_id */
 	    sync: function(command, model, options) {
-	    	if (command == "update") {
-	    		command = "create";
-	    	}
 	    	options = _.extend(options, {
-	    								  data : JSON.stringify([{item_id: model.id}]),
 	    								  contentType: 'application/json'
 	    								});
+	    	if (command == "update") {
+	    		command = "create";
+		    	options = _.extend(options, {
+		    								  data : JSON.stringify([{item_id: model.id}]),
+		    								});
+	    	} else if (command == "delete") {
+		    	options = _.extend(options, {
+		    								  url : this.url() + '/items/' + model.id,
+		    								});
+	    	}
 	        return Backbone.sync.apply(this, arguments);
 	    },
 
@@ -232,10 +243,15 @@ $(function(){
 			});
 		},
 
-		/* Add out API key when saving items to a collection */
+		/* Add our API key when saving items to a collection */
 		addItem : function(item) {
 			this.create({item_id: item.id}, {headers: {'X-LibraryCloud-API-Key': '999999999'}});
-		}
+		},
+
+		/* Add out API key when removing items from a collection */
+		removeItem : function(item) {
+			item.destroy({headers: {'X-LibraryCloud-API-Key': '999999999'}});
+		},
 
 	});
 
@@ -338,10 +354,17 @@ $(function(){
 		},
 
 		viewItem: function(e) {
-			dispatcher.trigger("collectionitem:view", {
+			dispatcher.trigger("collectionitems:view", {
 				item: this.model,
 			});
 		},
+
+		removeItem : function() {
+			dispatcher.trigger("collectionitems:remove", {
+								  item: this.model,
+								});
+		}
+
 
 	});	
 

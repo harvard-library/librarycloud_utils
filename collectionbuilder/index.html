@@ -68,17 +68,79 @@
               </tr>
             </thead>
             <tbody>
-              <script type="test/template" id="t-collection-item">
+              <script type="text/template" id="t-collection-item">
                 <td class="title"><%= title %></td>
                 <td><%= item_id %></td>
-                <td>View Remove</td>
+                <td>
+                  <button type="button" class="view btn btn-default btn-xs" id="view-item" data-toggle="modal" data-target="#item-view">View</button>
+                  <button type="button" class="remove btn btn-default btn-xs" id="remove-item">Remove</button>
+                </td>
               </script>
             </tbody>
           </table>
         </div>
       </div>
+    </div>
 
-
+    <div class="modal " id="item-view">
+      <div id="view-item" class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <script type="text/template" id="t-view-item">
+              <div class="modal-header">
+                <strong>View Item</strong>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>            
+              </div>
+              <div class="modal-body">
+                <table id="view-item" class="table table-striped"> 
+                  <tr>
+                    <td><strong>Title</strong></td>
+                    <td><%= title %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>title</strong></td>
+                    <td><%= type %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Creator</strong></td>
+                    <td><%= creator %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Contributor</strong></td>
+                    <td><%= contributor %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Publisher</strong></td>
+                    <td><%= publisher %></td>
+                  </tr>                
+                  <tr>
+                    <td><strong>Language</strong></td>
+                    <td><%= language %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Format</strong></td>
+                    <td><%= format %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Description</strong></td>
+                    <td><%= description %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Subject</strong></td>
+                    <td><%= subject %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Coverage</strong></td>
+                    <td><%= coverage %></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Identifier</strong></td>
+                    <td><%= identifier %></td>
+                  </tr>
+                </table>
+              </div>
+            </script>
+          </div>
+      </div>
     </div>
 
     <div class="modal " id="collection-add">
@@ -98,7 +160,7 @@
               </div>
             </form>             
             <div id="search-results-count">
-              <script type="test/template" id="t-search-results-count">
+              <script type="text/template" id="t-search-results-count">
                 <h5><%= count %> records found (<%= page_start %> to <%= page_end %> shown)</h5>
               </script>
             </div>
@@ -109,7 +171,7 @@
                   <th>ID</th>
                   <th>Action</th>
                 </tr>
-                <script type="test/template" id="t-search-results-item">
+                <script type="text/template" id="t-search-results-item">
                   <td class="title"><%= primary_title %><br/><small><%= secondary_title %></small></td>
                   <td><%= library_cloud_id %></td>
                   <td><% if (in_collection) { %>
@@ -124,7 +186,7 @@
               </tbody>
             </table>              
             <div id="search-pagination">
-              <script type="test/template" id="t-search-pagination">
+              <script type="text/template" id="t-search-pagination">
                 <nav>
                   <ul class="pager">
                     <li class="previous <%= show_previous %>"><a href="#" aria-label="Previous">Previous</a></li>

@@ -20,6 +20,12 @@ $(function(){
 					e.search_result_item.item.trigger("change", e.search_result_item.item);
 				});
 
+	/* View an item in a collection! */
+	dispatcher.on("collectionitem:view", function(e) { 
+					var detailView = new LCCollectionItemDetailView({model:new LCItem({id : e.item.id})});
+					detailView.render();
+				});
+
 	/* Notify the search results to run a search */
 	dispatcher.on("search:run", function(e) { 		
 					lcSearchResultItems.setQuery(e.query);
@@ -54,6 +60,16 @@ $(function(){
 		defaults: function() {
 			return { 
 				title: "",
+				creator: "",
+				contributor: "",
+				type: "",
+				publisher: "",
+				language: "",
+				format: "",
+				description: "",
+				subject: "",
+				coverage: "",
+				identifier: "",
 			}
 		},
 
@@ -66,6 +82,7 @@ $(function(){
 			this.id = options.id;
 			this.fetch();
 		},
+
 	});
 
 	var LCSearchResultItem = Backbone.Model.extend({
@@ -169,7 +186,6 @@ $(function(){
 
 		initialize: function(options) {
 			options || (options = {});
-			// this.collection_id = options.collection_id;
 			this.item = new LCItem({id: this.id});
 			this.listenTo(this.item, "change", this.updateCollectionItem);
 		},
@@ -285,14 +301,31 @@ $(function(){
 		},
 	});
 
+	/* Display collection summary information */
+	var LCCollectionItemDetailView = Backbone.View.extend({
+	  	el : $( "#view-item .modal-content" ),
+	  	template : _.template($('#t-view-item').html()),
+
+		initialize : function() {
+		    this.listenTo(this.model, "change", this.render);
+		},
+
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+	});
+
+
 	/* Display an item from the selected collection */
-	var LCCollectionItemView = Backbone.View.extend({
+	var LCCollectionItemListView = Backbone.View.extend({
 
 		tagName : 'tr',
 	  	template : _.template($('#t-collection-item').html()),
 
 		events: {
-			// "click a" : "selectCollection",
+			"click button.view" : "viewItem",
+			"click button.remove" : "removeItem",
 		},
 
 		initialize: function() {
@@ -303,6 +336,13 @@ $(function(){
 			this.$el.html(this.template(this.model.attributes));
     		return this;
 		},
+
+		viewItem: function(e) {
+			dispatcher.trigger("collectionitem:view", {
+				item: this.model,
+			});
+		},
+
 	});	
 
 
@@ -311,7 +351,7 @@ $(function(){
 		el : $( "table#item-list" ),
 		selectable : false,
 		collection : lcCollectionItems,
-		modelView : LCCollectionItemView,
+		modelView : LCCollectionItemListView,
 	} );
 
 	/* Display the search form */

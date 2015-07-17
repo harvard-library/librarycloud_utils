@@ -17,11 +17,13 @@ $(function(){
 	/* Let's add an item to a collection! */
 	dispatcher.on("collectionitems:add", function(e) { 
 					lcCollectionItems.addItem(e.item);
+					e.search_result_item.item.trigger("change", e.search_result_item.item);
 				});
 
 	/* Notify the search results to run a search */
 	dispatcher.on("search:run", function(e) { 		
 					lcSearchResultItems.setQuery(e.query);
+					lcSearchResultItems.setActiveCollectionItems(e.collectionitems);
 				});
 
 	/* Notify the search results list to update, once the search has completed */
@@ -89,13 +91,17 @@ $(function(){
 
 		inCurrentCollection : function() {
 			var id = this.item.id;
-			var exists = lcCollectionItems.find(function(a) {
-				return (a.item.id == id);
-			});
+			var exists = false;
+			if (this.collection) {
+				exists = this.collection.active_collection_items.find(function(a) {
+					return (a.item.id == id);
+				});
+			}
 			return (exists != undefined);
 		},
 
 		updateSearchResultItem: function() {
+			console.log("Updating item");
 			this.set({
 				library_cloud_id: this.item.id,
 				primary_title: _.first(_.flatten([this.item.get("title")])),
@@ -121,8 +127,14 @@ $(function(){
 			return (response.items != null) ? response.items.dc : [];
 		},
 
+		/* Items from the collection currently being viewed */
+		setActiveCollectionItems : function(collectionitems) {
+			this.active_collection_items = collectionitems;
+		},
+
 		setQuery : function(query) {
 			this.query = query;
+			this.setPage(0);
 			this.fetch({
 				success: function(collection, response, options) {
 					dispatcher.trigger("search:refresh");					
@@ -151,9 +163,13 @@ $(function(){
 
 		idAttribute: "item_id",
 
+		url: function() { 
+			return 'http://api.lib.harvard.edu/v2/collections/' + this.collection.collection_id;				
+		},
+
 		initialize: function(options) {
 			options || (options = {});
-			this.collection_id = options.collection_id;
+			// this.collection_id = options.collection_id;
 			this.item = new LCItem({id: this.id});
 			this.listenTo(this.item, "change", this.updateCollectionItem);
 		},
@@ -161,6 +177,21 @@ $(function(){
 		updateCollectionItem : function() {
 			this.set({title : this.item.get("title")})	
 		},
+
+		/* We need to override the default sync behavior for adding items 
+		   to a collection. Use POST instead of PUT, pass an array of 
+		   dictionaries instead of a single dictionary, and exclude 
+		   LCCollectionItem attributes other than the item_id */
+	    sync: function(command, model, options) {
+	    	if (command == "update") {
+	    		command = "create";
+	    	}
+	    	options = _.extend(options, {
+	    								  data : JSON.stringify([{item_id: model.id}]),
+	    								  contentType: 'application/json'
+	    								});
+	        return Backbone.sync.apply(this, arguments);
+	    },
 
 	});
 
@@ -185,8 +216,9 @@ $(function(){
 			});
 		},
 
+		/* Add out API key when saving items to a collection */
 		addItem : function(item) {
-			this.create({item_id: item.id});
+			this.create({item_id: item.id}, {headers: {'X-LibraryCloud-API-Key': '999999999'}});
 		}
 
 	});
@@ -195,6 +227,7 @@ $(function(){
 	var lcCollections = new LCCollectionList;
 	var lcCollectionItems = new LCCollectionItemList;
 	var lcSearchResultItems = new LCItemSearchResultsList;
+
 
 	/************************** Views **************************/
 	
@@ -291,7 +324,7 @@ $(function(){
 		search : function(e) {
 			dispatcher.trigger("search:run", {
 											  query: this.$el.find("input").val(),
-											  collection : this.model,
+											  collectionitems : lcCollectionItems,
 											});
 		}
 	});
@@ -318,6 +351,7 @@ $(function(){
 			dispatcher.trigger("collectionitems:add", {
 								  item: this.model.item,
 								  collection : selectedCollection,
+								  search_result_item: this.model,
 								});
 		}
 

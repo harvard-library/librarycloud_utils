@@ -34,6 +34,12 @@ $(function(){
 					LCCollectionItemListView.render();
 				});
 
+	/* Add a new collection */
+	dispatcher.on("collection:add", function(e) { 
+					lcCollections.addItem(e.title);
+				});
+
+
 	/* Let's add an item to a collection! */
 	dispatcher.on("collectionitems:add", function(e) { 
 					lcCollectionItems.addItem(e.item);
@@ -81,7 +87,42 @@ $(function(){
 
 		idAttribute: "identifier",
 
+		initialize: function(options) {
+			// this.on("all", function(e,c){console.log(e);console.log(arguments);});
+		},
+
+		/* We need to override the default sync behavior for adding collections.
+		   Use POST instead of PUT. */
 	    sync: function(command, model, options) {
+	    	if (command == "update") {
+	    		command = "create";
+	    		var t = this;
+		    	options = _.extend(options, {
+ 											success:  function(data, textStatus, xhr) {
+ 													// Reset the list of collections. Due to
+ 													// CORS restrictions (I think) we can't
+ 													// get the ID of the collection we just 
+ 													// created from the 'Location' field, so 
+ 													// need to refresh all.
+ 													// TODO: Fix the CORS configuration 												
+													t.collection.fetch({reset: true});
+												}
+											});
+
+    		}
+	    	options = _.extend(options, {
+	    									headers: {'X-LibraryCloud-API-Key': '999999999'},
+											dataFilter: function(data, type) {
+											    if (type == "json" && data == "") {
+	    								 		// Prevents throwing an error if we get a 
+	    								 		// 201 response with empty string, which is
+	    								 		// valid but causes jQuery to choke when
+	    								 		// trying to parse the JSON response
+											        data = null;
+											    }
+											    return data;
+											},
+	    								 });
 	        return Backbone.sync.apply(this, arguments);
 	    },
 
@@ -89,12 +130,11 @@ $(function(){
 
 	var LCCollectionList = Backbone.Collection.extend({
 		model: LCCollection,
-		url: 'http://api.lib.harvard.edu/v2/collections',
+		url: 'http://api.lib.harvard.edu/v2/collections?limit=999',
 
-	    sync: function(command, model, options) {
-	        return Backbone.sync.apply(this, arguments);
-	    },
-
+		addItem : function(title) {
+			var result = this.create({title: title});
+		},
 	});
 	
 	var LCItem = Backbone.Model.extend({
@@ -280,7 +320,7 @@ $(function(){
 
 		/* Add our API key when saving items to a collection */
 		addItem : function(item) {
-			this.create({item_id: item.id}, {headers: {'X-LibraryCloud-API-Key': '999999999'}});
+			var result = this.create({item_id: item.id}, {headers: {'X-LibraryCloud-API-Key': '999999999'}});
 		},
 
 		/* Add out API key when removing items from a collection */
@@ -311,6 +351,7 @@ $(function(){
 
 		initialize: function() {
 			this.listenTo(this.model, "change", this.render);
+			this.listenTo(this.model, "sync", this.render);
 		},
 
 		render : function() {
@@ -337,6 +378,24 @@ $(function(){
 		  modelView : LCCollectionView,
 	} );
 
+	var LCCollectionAddView = Backbone.View.extend({
+		el : $("#add-collection-button"),
+
+		events: {
+			"click button" : "createCollection",
+		},
+
+		createCollection: function() {
+			bootbox.prompt("Choose a name for your collection", function(result) {                
+				  if (result === null) {                                             
+				  	// Do nothing
+				  } else {
+					dispatcher.trigger("collection:add", {title: result});
+				  }
+				});
+		}
+	});
+
 	/* Display collection summary information */
 	var LCCollectionDetailTitleView =  Backbone.View.extend({
 	  	el : $( "#collection-detail" ),
@@ -356,16 +415,27 @@ $(function(){
 		},
 
 		deleteCollection: function() {
+        	var model = this.model;
             bootbox.confirm("Are you sure you want to delete the collection \"" +
-            	this.model.get("title") + "\"? This action cannot be undone.", 
-            	_.bind(function(result) {
+            	_.escape(this.model.get("title")) + "\"? This action cannot be undone.", 
+
+            	function(result) {
             		if (result) {
 							dispatcher.trigger("collection:remove", {
-												  collection: this.model,
+												  collection: model,
 												});
             		}
-            	}, this)
-            );
+            	});
+       //      bootbox.confirm("Are you sure you want to delete the collection \"" +
+       //      	_.escape(this.model.get("title")) + "\"? This action cannot be undone.", 
+       //      	_.bind(function(result) {
+       //      		if (result) {
+							// dispatcher.trigger("collection:remove", {
+							// 					  collection: this.model,
+							// 					});
+       //      		}
+       //      	}, this)
+            // );
 		}
 	});
 
@@ -431,8 +501,8 @@ $(function(){
 
 	/* Display the search form */
 	var LCSearchFormView = Backbone.View.extend({
-		el : $("#collection-add form.search-form"),
-		template : _.template($('#collection-add form.search-form').html()),
+		el : $("#collection-add-item form.search-form"),
+		template : _.template($('#collection-add-item form.search-form').html()),
 		events: {
 			"submit" : "search",
 		},
@@ -551,6 +621,7 @@ $(function(){
 	var searchView = new LCSearchFormView({model:selectedCollection});
 	var searchPaginationView = new LCSearchItemListPaginationView({model: lcSearchResultItems});
 	var searchResultCountView = new LCSearchItemListResultCountView({model: lcSearchResultItems});
+	var addCollectionButtonView = new LCCollectionAddView();
 
 });
 

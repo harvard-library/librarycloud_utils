@@ -23,6 +23,7 @@ $(function(){
 
 	/* Refresh all views that display collections */
 	dispatcher.on("collection:refresh", function(e) { 
+					titleView.undelegateEvents();
 					titleView = new LCCollectionDetailTitleView({model:selectedCollection});
 					titleView.render();
 					LCCollectionListView.render();
@@ -53,6 +54,7 @@ $(function(){
 
 	/* View an item in a collection! */
 	dispatcher.on("collectionitems:view", function(e) { 
+					detailView.undelegateEvents();
 					var detailView = new LCCollectionItemDetailView({model:new LCItem({id : e.item.id})});
 					detailView.render();
 				});
@@ -415,27 +417,16 @@ $(function(){
 		},
 
 		deleteCollection: function() {
-        	var model = this.model;
             bootbox.confirm("Are you sure you want to delete the collection \"" +
             	_.escape(this.model.get("title")) + "\"? This action cannot be undone.", 
-
-            	function(result) {
+            	_.bind(function(result) {
             		if (result) {
 							dispatcher.trigger("collection:remove", {
-												  collection: model,
+												  collection: this.model,
 												});
             		}
-            	});
-       //      bootbox.confirm("Are you sure you want to delete the collection \"" +
-       //      	_.escape(this.model.get("title")) + "\"? This action cannot be undone.", 
-       //      	_.bind(function(result) {
-       //      		if (result) {
-							// dispatcher.trigger("collection:remove", {
-							// 					  collection: this.model,
-							// 					});
-       //      		}
-       //      	}, this)
-            // );
+            	}, this)
+            );
 		}
 	});
 

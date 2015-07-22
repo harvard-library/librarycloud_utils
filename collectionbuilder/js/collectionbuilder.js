@@ -388,13 +388,15 @@ $(function(){
 		},
 
 		createCollection: function() {
-			bootbox.prompt("Choose a name for your collection", function(result) {                
-				  if (result === null) {                                             
-				  	// Do nothing
-				  } else {
-					dispatcher.trigger("collection:add", {title: result});
-				  }
-				});
+			bootbox.prompt({
+				title: "Choose a name for your collection", 
+				callback: function(result) {                
+						  if (result !== null) {                                             
+							dispatcher.trigger("collection:add", {title: result});
+						  }
+						},
+				animate: false,
+			});
 		}
 	});
 
@@ -417,15 +419,16 @@ $(function(){
 		},
 
 		deleteCollection: function() {
-            bootbox.confirm("Are you sure you want to delete the collection \"" +
-            	_.escape(this.model.get("title")) + "\"? This action cannot be undone.", 
-            	_.bind(function(result) {
-            		if (result) {
-							dispatcher.trigger("collection:remove", {
-												  collection: this.model,
-												});
-            		}
-            	}, this)
+            bootbox.confirm({
+            	message: "Are you sure you want to delete the collection \"" +
+            				_.escape(this.model.get("title")) + "\"? This action cannot be undone.", 
+            	callback: _.bind(function(result) {
+			            		if (result) {
+									dispatcher.trigger("collection:remove", { collection: this.model, });
+			            		}
+			            	}, this),
+            	animate: false,
+            	}
             );
 		}
 	});

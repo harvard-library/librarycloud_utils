@@ -60,7 +60,7 @@
                 <div id="sections-document" class="panel-body">
                   <% if (abstract) { %><p><strong>Abstract: </strong><%- abstract %></p><% } %>
                   <% if (identifier) { %>
-                    <button type="button" class="btn btn-default ">Edit</button>
+                    <button type="button" class="btn btn-default " data-toggle="modal" data-target="#collection-edit">Edit</button>
                     <button type="button" class="btn btn-default " data-toggle="modal" data-target="#collection-add-item">Add Items</button>
                     <button type="button" class="delete btn btn-danger" id="delete-collection">Delete Collection</button>
                   <% } %>
@@ -89,6 +89,7 @@
         </div>
       </div>
     </div>
+  
 
     <div class="modal " id="item-view">
       <div id="view-item" class="modal-dialog modal-lg">
@@ -182,8 +183,37 @@
               </script>
             </div>
           </div>
-        <div>
+        </div>
       </div>
+    </div>
+
+  <div class="modal " id="collection-edit">
+    <div id="edit-collection" class="modal-dialog modal-lg">
+      <script type="text/template" id="t-edit-collection">    
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Edit Collection</h4>
+          </div>
+          <div class="modal-body">          
+            <form >
+              <div class="form-group">
+                <label for="editCollectionName">Collection Name</label>
+                <input type="text" class="form-control" id="editCollectionName" value="<%- title %>">
+              </div>
+              <div class="form-group">
+                <label for="editCollectionAbstract">Collection Abstract</label>
+                <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- abstract %></textarea>
+              </div>
+              <div class="form-group">
+                <button type="button" class="btn btn-primary save">Save</button>
+                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
+              </div>
+            </form>             
+          </div>
+        </div>
+      </script>
+    </div>
   </div>
 
 

@@ -23,6 +23,9 @@ $(function(){
 
 	/* Refresh all views that display collections */
 	dispatcher.on("collection:refresh", function(e) { 
+					editCollectionView.undelegateEvents();
+					editCollectionView = new LCCollectionEditView({model:selectedCollection});
+					editCollectionView.render();
 					titleView.undelegateEvents();
 					titleView = new LCCollectionDetailTitleView({model:selectedCollection});
 					titleView.render();
@@ -54,7 +57,9 @@ $(function(){
 
 	/* View an item in a collection! */
 	dispatcher.on("collectionitems:view", function(e) { 
-					detailView.undelegateEvents();
+					if (detailView) {
+						detailView.undelegateEvents();						
+					}
 					var detailView = new LCCollectionItemDetailView({model:new LCItem({id : e.item.id})});
 					detailView.render();
 				});
@@ -93,10 +98,10 @@ $(function(){
 			// this.on("all", function(e,c){console.log(e);console.log(arguments);});
 		},
 
-		/* We need to override the default sync behavior for adding collections.
-		   Use POST instead of PUT. */
 	    sync: function(command, model, options) {
-	    	if (command == "update") {
+			/* Override the default sync behavior for adding collections.
+			   Use POST instead of PUT. */
+	    	if (command == "update" && !model.id) {
 	    		command = "create";
 	    		var t = this;
 		    	options = _.extend(options, {
@@ -133,6 +138,11 @@ $(function(){
 	var LCCollectionList = Backbone.Collection.extend({
 		model: LCCollection,
 		url: 'http://api.lib.harvard.edu/v2/collections?limit=999',
+
+
+		initialize: function(options) {
+			this.on("all", function(e,c){console.log(e);console.log(arguments);});
+		},
 
 		addItem : function(title) {
 			var result = this.create({title: title});
@@ -316,6 +326,7 @@ $(function(){
 			this.fetch({
 				success: function(collection, response, options) {
 					dispatcher.trigger("collectionitems:refresh");					
+					dispatcher.trigger("collection:refresh");					
 				}
 			});
 		},
@@ -362,11 +373,7 @@ $(function(){
 		},
 
 		selectCollection : function() {
-			selectedCollection.set({
-				title: this.model.get("title"),
-				abstract: this.model.get("abstract"),
-				identifier: this.model.get("identifier"),
-			});
+			selectedCollection = this.model;
 			dispatcher.trigger("collection:select", {collection_id: this.model.get("identifier")});
 		}
 
@@ -600,6 +607,31 @@ $(function(){
 		},
 	});
 
+	/* Edit collection name and abstract */
+	var LCCollectionEditView = Backbone.View.extend({
+		el : $("#edit-collection"),
+		template : _.template($('#t-edit-collection').html()),
+		initialize : function() {
+		    this.listenTo(this.model, "change", this.render);
+		},
+
+		events : {
+			"click .save" : "saveCollection",
+		},
+
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+
+		saveCollection: function() {
+			this.model.set("title", this.$("#editCollectionName").val());
+			this.model.set("abstract", this.$("#editCollectionAbstract").val());
+			this.model.save();
+			$(".modal").modal('hide');
+		},
+	});
+
 
 	/************************** Initialization **************************/
 	
@@ -611,6 +643,8 @@ $(function(){
 	var selectedCollection = new LCCollection();	
 	var titleView = new LCCollectionDetailTitleView({model:selectedCollection});
 	titleView.render();
+	var editCollectionView = new LCCollectionEditView({model:selectedCollection});
+	editCollectionView.render();
 
 	var searchView = new LCSearchFormView({model:selectedCollection});
 	var searchPaginationView = new LCSearchItemListPaginationView({model: lcSearchResultItems});

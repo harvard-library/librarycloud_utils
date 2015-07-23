@@ -78,6 +78,14 @@ $(function(){
 					e.search_result_item.item.trigger("change", e.search_result_item.item);
 				});
 
+	/* Let's add an item to a collection! */
+	dispatcher.on("collectionitems:upload", function(e) { 
+					_.each(e.ids, function(element, index, list) {
+						var item = new LCItem({id : element});
+						lcCollectionItems.addItem(item);
+					});
+				});
+
 	/* Remove and item from a collection */
 	dispatcher.on("collectionitems:remove", function(e) { 
 					lcCollectionItems.removeItem(e.item);
@@ -747,7 +755,12 @@ $(function(){
 		},
 
 		uploadCollectionItems: function() {
-			console.log("Uploading");
+			if (this.$("#upload").val()) {
+				var ids = this.$("#upload").val().split(/[\s,]+/);
+				if (ids) {
+					dispatcher.trigger("collectionitems:upload", { ids : ids });
+				}
+			}
 			$(".modal").modal('hide');			
 		},
 	});
@@ -777,7 +790,7 @@ $(function(){
 
 	});
 
-	// /* Edit API Key */
+	/* Display API key button */
 	var LCPageTitleView = Backbone.View.extend({
 		el : $("h1"),
 		template : _.template($('#t-title').html()),
@@ -786,12 +799,12 @@ $(function(){
 		},
 
 		render : function() {
+			$(".api-key-alert").toggle(!this.model.isKeySet());
 			this.$el.html(this.template(this.model.attributes));
     		return this;
 		},
 
 	});
-
 
 	/************************** Initialization **************************/
 	
@@ -828,6 +841,11 @@ $(function(){
 	apiKeyView.render();
 	var pageTitleView = new LCPageTitleView({model: apiKey});
 	pageTitleView.render();
+
+	/* Display alert if no API key at launch */
+	if (apiKey.isKeySet()) {
+		$(".api-key-alert").hide(); 
+	}
 
 });
 

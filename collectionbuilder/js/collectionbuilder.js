@@ -45,6 +45,13 @@ $(function(){
 				});
 
 
+	/* Download a list of collection item IDs */
+	dispatcher.on("collection:download", function(e) { 
+					var ids = _.pluck(lcCollectionItems.models,"id").join('\n');
+					window.open("data:text/plain;charset=utf-8," + encodeURIComponent(ids));
+				});
+
+
 	/* Let's add an item to a collection! */
 	dispatcher.on("collectionitems:add", function(e) { 
 					lcCollectionItems.addItem(e.item);
@@ -142,7 +149,7 @@ $(function(){
 
 
 		initialize: function(options) {
-			this.on("all", function(e,c){console.log(e);console.log(arguments);});
+			// this.on("all", function(e,c){console.log(e);console.log(arguments);});
 		},
 
 		addItem : function(title) {
@@ -414,6 +421,7 @@ $(function(){
 
 		events: {
 			"click button.delete" : "deleteCollection",
+			"click button.download" : "downloadCollectionItems",
 		},
 
 		initialize : function() {
@@ -437,7 +445,12 @@ $(function(){
             	animate: false,
             	}
             );
-		}
+		},
+
+		downloadCollectionItems: function() {
+			dispatcher.trigger("collection:download");
+		},
+
 	});
 
 	/* Display collection summary information */
@@ -457,7 +470,7 @@ $(function(){
 
 
 	/* Display an item from the selected collection */
-	var LCCollectionItemListView = Backbone.View.extend({
+	var LCCollectionItemListRowView = Backbone.View.extend({
 
 		tagName : 'tr',
 	  	template : _.template($('#t-collection-item').html()),
@@ -486,7 +499,7 @@ $(function(){
 			dispatcher.trigger("collectionitems:remove", {
 								  item: this.model,
 								});
-		}
+		},
 
 
 	});	
@@ -497,8 +510,8 @@ $(function(){
 		el : $( "table#item-list" ),
 		selectable : false,
 		collection : lcCollectionItems,
-		modelView : LCCollectionItemListView,
-	} );
+		modelView : LCCollectionItemListRowView,
+	});
 
 	/* Display the search form */
 	var LCSearchFormView = Backbone.View.extend({
@@ -514,6 +527,7 @@ $(function(){
 											});
 		}
 	});
+
 
 	/* Display a single item in the search results */
 	var LCSearchItemView = Backbone.View.extend({

@@ -7,6 +7,7 @@ $(function(){
 	/* Notify the list of collection items to update, since the selected collection has changed */
 	dispatcher.on("collection:select", function(e) { 
 					lcCollectionItems.selectCollection(e.collection_id);
+					dispatcher.trigger("collection:refresh");
 				});
 
 	/* Delete a collection */
@@ -326,7 +327,6 @@ $(function(){
 			this.fetch({
 				success: function(collection, response, options) {
 					dispatcher.trigger("collectionitems:refresh");					
-					dispatcher.trigger("collection:refresh");					
 				}
 			});
 		},

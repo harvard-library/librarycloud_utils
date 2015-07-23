@@ -1,8 +1,17 @@
 
 $(function(){
 
+
+
 	/************************** Dispatch **************************/
 	var dispatcher = _.clone(Backbone.Events)
+
+	/* API key updated. Update any views that check whether the API key is populated */
+	dispatcher.on("apikey:updated", function(e) { 
+					addCollectionButtonView.render();
+					titleView.render();					
+				});
+
 
 	/* Notify the list of collection items to update, since the selected collection has changed */
 	dispatcher.on("collection:select", function(e) { 
@@ -15,8 +24,7 @@ $(function(){
 					lcCollections.remove(e.collection);
 					selectedCollection = new LCCollection();
 					lcCollectionItems.reset(null);	
-					e.collection.destroy({headers: {'X-LibraryCloud-API-Key': '999999999'},
-										  success: function() {
+					e.collection.destroy({success: function() {
 					  						dispatcher.trigger("collection:refresh");
 										  }
 										});
@@ -30,8 +38,11 @@ $(function(){
 					titleView.undelegateEvents();
 					titleView = new LCCollectionDetailTitleView({model:selectedCollection});
 					titleView.render();
+					uploadCollectionView.undelegateEvents();
+					uploadCollectionView = new LCCollectionUploadView({model:selectedCollection});
+					uploadCollectionView.render();
 					LCCollectionListView.render();
-					LCCollectionItemListView.render();					
+					LCCollectionItemListView.render();
 				});
 
 	/* Notify collection item list view to update, once the items for a collection have been loaded */
@@ -126,7 +137,7 @@ $(function(){
 
     		}
 	    	options = _.extend(options, {
-	    									headers: {'X-LibraryCloud-API-Key': '999999999'},
+	    									headers: {'X-LibraryCloud-API-Key': apiKey.get("key")},
 											dataFilter: function(data, type) {
 											    if (type == "json" && data == "") {
 	    								 		// Prevents throwing an error if we get a 
@@ -300,7 +311,8 @@ $(function(){
 		   LCCollectionItem attributes other than the item_id */
 	    sync: function(command, model, options) {
 	    	options = _.extend(options, {
-	    								  contentType: 'application/json'
+	    								  contentType: 'application/json',
+	    								  headers: {'X-LibraryCloud-API-Key': apiKey.get("key")},
 	    								});
 	    	if (command == "update") {
 	    		command = "create";
@@ -340,15 +352,47 @@ $(function(){
 
 		/* Add our API key when saving items to a collection */
 		addItem : function(item) {
-			var result = this.create({item_id: item.id}, {headers: {'X-LibraryCloud-API-Key': '999999999'}});
+			var result = this.create({item_id: item.id});
 		},
 
 		/* Add out API key when removing items from a collection */
 		removeItem : function(item) {
-			item.destroy({headers: {'X-LibraryCloud-API-Key': '999999999'}});
+			item.destroy();
 		},
 
 	});
+
+	var LCAPIKey = Backbone.Model.extend({
+		defaults: function() {
+			return { 
+				key: "",
+			}
+		},
+
+		isKeySet : function() {
+			return (this.get("key") ? true : false);
+		},
+
+		sync: function(method, model, options) {
+			switch (method) {
+				case "create":					
+				case "update":
+					localStorage.setItem("key", model.get("key"));
+					dispatcher.trigger("apikey:updated");
+					break;
+				case "read":
+					model.set("key", localStorage.getItem("key"));
+					break;
+				case "delete":
+					localStorage.removeItem("key");
+					dispatcher.trigger("apikey:updated");
+					break;
+			}
+		}
+
+	});
+
+
 
 	/* Define variables for the collection lists */
 	var lcCollections = new LCCollectionList;
@@ -396,9 +440,16 @@ $(function(){
 
 	var LCCollectionAddView = Backbone.View.extend({
 		el : $("#add-collection-button"),
+	  	template : _.template($('#t-collection-add').html()),
 
 		events: {
 			"click button" : "createCollection",
+		},
+
+		render : function() {
+			console.log(apiKey);
+			this.$el.html(this.template({disabled: !apiKey.isKeySet()}));
+    		return this;
 		},
 
 		createCollection: function() {
@@ -429,7 +480,7 @@ $(function(){
 		},
 
 		render : function() {
-			this.$el.html(this.template(this.model.attributes));
+			this.$el.html(this.template(_.extend(this.model.attributes,{disabled: !apiKey.isKeySet()})));
     		return this;
 		},
 
@@ -646,24 +697,106 @@ $(function(){
 		},
 	});
 
+	/* Edit collection name and abstract */
+	var LCCollectionUploadView = Backbone.View.extend({
+		el : $("#upload-collection"),
+		template : _.template($('#t-upload-collection').html()),
+		initialize : function() {
+		    this.listenTo(this.model, "change", this.render);
+		},
+
+		events : {
+			"click .save" : "uploadCollectionItems",
+		},
+
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+
+		uploadCollectionItems: function() {
+			console.log("Uploading");
+			$(".modal").modal('hide');			
+		},
+	});
+
+	/* Edit API Key */
+	var LCAPIKeyEditView = Backbone.View.extend({
+		el : $("#edit-api-key"),
+		template : _.template($('#t-edit-api-key').html()),
+		initialize : function() {
+		    this.listenTo(this.model, "change", this.render);
+		},
+
+		events : {
+			"click .save" : "saveKey",
+		},
+
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+
+		saveKey: function() {
+			console.log("Saving key");
+			this.model.set("key", this.$("#editAPIKey").val());
+			this.model.save();
+			$(".modal").modal('hide');			
+		},
+
+	});
+
+	// /* Edit API Key */
+	var LCPageTitleView = Backbone.View.extend({
+		el : $("h1"),
+		template : _.template($('#t-title').html()),
+		initialize : function() {
+		    this.listenTo(this.model, "change", this.render);
+		},
+
+		render : function() {
+			this.$el.html(this.template(this.model.attributes));
+    		return this;
+		},
+
+	});
+
 
 	/************************** Initialization **************************/
 	
 	
 	Backbone.history.start() 
+
+	/* Get the API Key */
+	var apiKey = new LCAPIKey();
+	apiKey.fetch();
+
+	/* Get the collection list and display it */
   	lcCollections.fetch();
 	LCCollectionListView.render();
 
+
+	/* Collection display and editing views */
 	var selectedCollection = new LCCollection();	
 	var titleView = new LCCollectionDetailTitleView({model:selectedCollection});
 	titleView.render();
 	var editCollectionView = new LCCollectionEditView({model:selectedCollection});
 	editCollectionView.render();
+	var uploadCollectionView = new LCCollectionUploadView({model:selectedCollection});
+	uploadCollectionView.render();
+	var addCollectionButtonView = new LCCollectionAddView();
+	addCollectionButtonView.render();
 
+	/* Search views */
 	var searchView = new LCSearchFormView({model:selectedCollection});
 	var searchPaginationView = new LCSearchItemListPaginationView({model: lcSearchResultItems});
 	var searchResultCountView = new LCSearchItemListResultCountView({model: lcSearchResultItems});
-	var addCollectionButtonView = new LCCollectionAddView();
+
+	/* Other views */
+	var apiKeyView = new LCAPIKeyEditView({model: apiKey});
+	apiKeyView.render();
+	var pageTitleView = new LCPageTitleView({model: apiKey});
+	pageTitleView.render();
 
 });
 

@@ -23,7 +23,13 @@
 
     <div id="collection-builder" class="container-fluid">
       <div class="page-header">
-        <h1>Collection Builder <small>Made with LibraryCloud</small></h1>
+        <h1>
+            <script type="text/template" id="t-title">
+              Collection Builder <small>Made with LibraryCloud</small>
+              <button type="button" class="btn <% if (key) { %> btn-default <% } else { %> btn-primary <% } %> pull-right  api-key" data-toggle="modal" data-target="#global-api-key">
+                <% if (key) { %> Update <% } else { %> Set <% } %> API Key</button>
+            </script>
+        </h1>
       </div>
 
       <div class="row">
@@ -42,7 +48,10 @@
               <a href='#<%- identifier %>'><%- title %></a>
             </script>
             <div class="panel-body" id="add-collection-button">              
-              <button type="button" class="btn btn-primary " data-toggle="modal" data-target="#collection-add">Add Collection</button>
+              <script type="text/template" id="t-collection-add">
+                <button type="button" class="btn btn-primary " data-toggle="modal" data-target="#collection-add" 
+                        <% if (disabled) { %>disabled="disabled"<% } %>>Add Collection</button>
+              </script>
             </div>
           </div>
         </div>
@@ -60,10 +69,11 @@
                 <div id="sections-document" class="panel-body">
                   <% if (abstract) { %><p><strong>Abstract: </strong><%- abstract %></p><% } %>
                   <% if (identifier) { %>
-                    <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit">Edit</button>
-                    <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item">Add Items</button>
+                    <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit" <% if (disabled) { %>disabled="disabled"<% } %>>Edit</button>
+                    <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item" <% if (disabled) { %>disabled="disabled"<% } %>>Add Items</button>
                     <button type="button" class="btn btn-default download" >Download Item IDs</button>
-                    <button type="button" class="btn btn-danger  delete" id="delete-collection">Delete Collection</button>
+                    <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#collection-upload" <% if (disabled) { %>disabled="disabled"<% } %>>Upload Item IDs</button>
+                    <button type="button" class="btn btn-danger  delete" id="delete-collection" <% if (disabled) { %>disabled="disabled"<% } %>>Delete Collection</button>
                   <% } %>
                 </div>
               </script>
@@ -205,6 +215,61 @@
               <div class="form-group">
                 <label for="editCollectionAbstract">Collection Abstract</label>
                 <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- abstract %></textarea>
+              </div>
+              <div class="form-group">
+                <button type="button" class="btn btn-primary save">Save</button>
+                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
+              </div>
+            </form>             
+          </div>
+        </div>
+      </script>
+    </div>
+  </div>
+
+  <div class="modal " id="collection-upload">
+    <div id="upload-collection" class="modal-dialog modal-lg">
+      <script type="text/template" id="t-upload-collection">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Upload Items</h4>
+          </div>
+          <div class="modal-body">          
+            <form >
+              <div class="form-group">
+                <label for="upload">Collection Abstract</label>
+                <p class="help-block">Paste a list of LibraryCloud item IDs, one per line, to be added to the collection</p>
+                <textarea class="form-control" id="upload" rows="10"><%- abstract %></textarea>
+              </div>
+              <div class="form-group">
+                <button type="button" class="btn btn-primary save">Save</button>
+                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
+              </div>
+            </form>             
+          </div>
+        </div>
+      </script>
+    </div>
+  </div>
+
+  <div class="modal " id="global-api-key">
+    <div id="edit-api-key" class="modal-dialog">
+      <script type="text/template" id="t-edit-api-key">    
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Set API Key</h4>
+          </div>
+          <div class="modal-body">          
+            <form >
+              <div class="form-group">
+                <label for="editAPIKey">API Key</label>
+                <input type="text" class="form-control" id="editAPIKey" value="<%- key %>">
+                <p class="help-block">
+                  An API Key is required for adding, editing, or deleting collections. The key will be saved on your device.
+                  To get an API Key, contact <a href="mailto:librarycloud@hulmail.harvard.edu">librarycloud@hulmail.harvard.edu</a>.
+                </p>                
               </div>
               <div class="form-group">
                 <button type="button" class="btn btn-primary save">Save</button>

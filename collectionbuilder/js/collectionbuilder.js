@@ -12,6 +12,14 @@ $(function(){
 					titleView.render();					
 				});
 
+	/* Error notifications */
+	dispatcher.on("global:error", function(e) { 
+					bootbox.alert({
+						title: "Error",
+						message: "We've encountered an error" + (e.message ? ": " + e.message : "")
+					});
+				});
+
 
 	/* Notify the list of collection items to update, since the selected collection has changed */
 	dispatcher.on("collection:select", function(e) { 
@@ -21,12 +29,13 @@ $(function(){
 
 	/* Delete a collection */
 	dispatcher.on("collection:remove", function(e) { 
-					lcCollections.remove(e.collection);
-					selectedCollection = new LCCollection();
-					lcCollectionItems.reset(null);	
-					e.collection.destroy({success: function() {
-					  						dispatcher.trigger("collection:refresh");
-										  }
+					e.collection.destroy({  wait: true,
+											success: function() {
+												lcCollections.remove(e.collection);
+												selectedCollection = new LCCollection();
+												lcCollectionItems.reset(null);	
+					  							dispatcher.trigger("collection:refresh");
+										  	}
 										});
 				});
 
@@ -114,7 +123,16 @@ $(function(){
 		idAttribute: "identifier",
 
 		initialize: function(options) {
-			// this.on("all", function(e,c){console.log(e);console.log(arguments);});
+			 // this.on("all", function(e,c){console.log(e);console.log(arguments);});
+			 this.on("invalid", function() {
+			 	dispatcher.trigger("global:error", { message: this.validationError });
+			 });
+		},
+
+		validate: function() {
+			if (!this.get("title")) {
+				return "Collection title must not be empty";
+			}
 		},
 
 	    sync: function(command, model, options) {
@@ -137,6 +155,14 @@ $(function(){
 
     		}
 	    	options = _.extend(options, {
+	    									error: function(jqXHR, textStatus, errorThrown) {
+	    										var message = errorThrown;
+	    										if (statusCode = 401) {
+	    											message += " (Your API key may not be valid)"
+	    										}  										
+	    										dispatcher.trigger("global:error", { message: message} );
+					  							dispatcher.trigger("collection:refresh");
+	    									},
 	    									headers: {'X-LibraryCloud-API-Key': apiKey.get("key")},
 											dataFilter: function(data, type) {
 											    if (type == "json" && data == "") {
@@ -164,7 +190,7 @@ $(function(){
 		},
 
 		addItem : function(title) {
-			var result = this.create({title: title});
+			var result = this.create({title: title}, {wait: true});
 		},
 	});
 	
@@ -311,8 +337,17 @@ $(function(){
 		   LCCollectionItem attributes other than the item_id */
 	    sync: function(command, model, options) {
 	    	options = _.extend(options, {
-	    								  contentType: 'application/json',
-	    								  headers: {'X-LibraryCloud-API-Key': apiKey.get("key")},
+	    									contentType: 'application/json',
+	   								  		headers: {'X-LibraryCloud-API-Key': apiKey.get("key")},
+	    									error: function(jqXHR, textStatus, errorThrown) {
+	    										var message = errorThrown;
+	    										if (statusCode = 401) {
+	    											message += " (Your API key may not be valid)"
+	    										}  										
+	    										dispatcher.trigger("global:error", { message: message} );
+					  							dispatcher.trigger("collectionitems:refresh");
+	    									},
+
 	    								});
 	    	if (command == "update") {
 	    		command = "create";
@@ -350,14 +385,12 @@ $(function(){
 			});
 		},
 
-		/* Add our API key when saving items to a collection */
 		addItem : function(item) {
-			var result = this.create({item_id: item.id});
+			var result = this.create({item_id: item.id}, {wait: true});
 		},
 
-		/* Add out API key when removing items from a collection */
 		removeItem : function(item) {
-			item.destroy();
+			item.destroy({wait: true});
 		},
 
 	});
@@ -447,7 +480,6 @@ $(function(){
 		},
 
 		render : function() {
-			console.log(apiKey);
 			this.$el.html(this.template({disabled: !apiKey.isKeySet()}));
     		return this;
 		},
@@ -690,9 +722,9 @@ $(function(){
 		},
 
 		saveCollection: function() {
-			this.model.set("title", this.$("#editCollectionName").val());
-			this.model.set("abstract", this.$("#editCollectionAbstract").val());
-			this.model.save();
+			this.model.set({title: this.$("#editCollectionName").val(),
+							abstract: this.$("#editCollectionAbstract").val()});
+			this.model.save({wait: true});
 			$(".modal").modal('hide');
 		},
 	});
@@ -738,7 +770,6 @@ $(function(){
 		},
 
 		saveKey: function() {
-			console.log("Saving key");
 			this.model.set("key", this.$("#editAPIKey").val());
 			this.model.save();
 			$(".modal").modal('hide');			

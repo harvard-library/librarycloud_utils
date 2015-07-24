@@ -1,7 +1,7 @@
 
 $(function(){
 
-
+	var urlBase = 'http://api.lib.harvard.edu';
 
 	/************************** Dispatch **************************/
 	var dispatcher = _.clone(Backbone.Events)
@@ -23,7 +23,8 @@ $(function(){
 
 	/* Notify the list of collection items to update, since the selected collection has changed */
 	dispatcher.on("collection:select", function(e) { 
-					lcCollectionItems.selectCollection(e.collection_id);
+					selectedCollection = e;
+					lcCollectionItems.selectCollection(e.get("identifier"));
 					dispatcher.trigger("collection:refresh");
 				});
 
@@ -126,7 +127,7 @@ $(function(){
 		},
 
 		url: function() {
-			return 'http://api.lib.harvard.edu/v2/collections/' + this.id;
+			return urlBase + '/v2/collections/' + this.id;
 		},
 
 		idAttribute: "identifier",
@@ -152,13 +153,15 @@ $(function(){
 	    		var t = this;
 		    	options = _.extend(options, {
  											success:  function(data, textStatus, xhr) {
- 													// Reset the list of collections. Due to
- 													// CORS restrictions (I think) we can't
- 													// get the ID of the collection we just 
- 													// created from the 'Location' field, so 
- 													// need to refresh all.
- 													// TODO: Fix the CORS configuration 												
-													t.collection.fetch({reset: true});
+													var location = xhr.getResponseHeader("Location");
+													t.collection.fetch({reset: true,
+														success: function() {
+															if (location) {
+																/* Get the new collection's ID, and select id */
+																var c = location.split("/").pop()
+																dispatcher.trigger("collection:select", t.collection.get(c));
+															}
+														}});
 												}
 											});
 
@@ -191,7 +194,7 @@ $(function(){
 
 	var LCCollectionList = Backbone.Collection.extend({
 		model: LCCollection,
-		url: 'http://api.lib.harvard.edu/v2/collections?limit=999',
+		url: urlBase + '/v2/collections?limit=999',
 
 
 		initialize: function(options) {
@@ -221,7 +224,7 @@ $(function(){
 		},
 
 		url: function() { 
-			return 'http://api.lib.harvard.edu/v2/items/' + this.id + ".dc";
+			return urlBase + '/v2/items/' + this.id + ".dc";
 		},
 
 		initialize: function(options) {
@@ -277,7 +280,7 @@ $(function(){
 	var LCItemSearchResultsList = Backbone.Collection.extend({
 		model: LCSearchResultItem,
 		url: function() { 
-			return 'http://api.lib.harvard.edu/v2/items.dc?q=' 
+			return urlBase + '/v2/items.dc?q=' 
 						+ this.query 
 						+ (this.query_start ? "&start=" + this.query_start : "");
 		},
@@ -327,7 +330,7 @@ $(function(){
 		idAttribute: "item_id",
 
 		url: function() { 
-			return 'http://api.lib.harvard.edu/v2/collections/' + this.collection.collection_id;				
+			return urlBase + '/v2/collections/' + this.collection.collection_id;				
 		},
 
 		initialize: function(options) {
@@ -377,7 +380,7 @@ $(function(){
 		model: LCCollectionItem,
 		
 		url: function() { 
-			return 'http://api.lib.harvard.edu/v2/collections/' + this.collection_id + '/items';				
+			return urlBase + '/v2/collections/' + this.collection_id + '/items';				
 		},
 
 		initialize: function(options) {
@@ -466,8 +469,7 @@ $(function(){
 		},
 
 		selectCollection : function() {
-			selectedCollection = this.model;
-			dispatcher.trigger("collection:select", {collection_id: this.model.get("identifier")});
+			dispatcher.trigger("collection:select", this.model);
 		}
 
 	});	

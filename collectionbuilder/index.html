@@ -164,7 +164,7 @@
           <div class="modal-body">
             <form class="form-inline search-form">
               <div class="input-group">
-                <input type="text" class="form-control" id="item-search" placeholder="Search for an item to add">
+                <input type="text" class="form-control" id="item-search" placeholder="Search for an item to add" autofocus>
                 <span class="input-group-btn">
                   <button type="submit" class="btn btn-default">Search</button>
                 </span>
@@ -223,7 +223,7 @@
             <form >
               <div class="form-group">
                 <label for="editCollectionName">Collection Name</label>
-                <input type="text" class="form-control" id="editCollectionName" value="<%- title %>">
+                <input type="text" class="form-control" id="editCollectionName" value="<%- title %>" autofocus>  
               </div>
               <div class="form-group">
                 <label for="editCollectionAbstract">Collection Abstract</label>
@@ -253,7 +253,7 @@
               <div class="form-group">
                 <label for="upload">Upload IDs</label>
                 <p class="help-block">Paste a list of LibraryCloud item IDs, one per line, to be added to the collection</p>
-                <textarea class="form-control" id="upload" rows="10"></textarea>
+                <textarea class="form-control" id="upload" rows="10" autofocus></textarea>
               </div>
               <div class="form-group">
                 <button type="button" class="btn btn-primary save">Save</button>
@@ -278,7 +278,7 @@
             <form >
               <div class="form-group">
                 <label for="editAPIKey">API Key</label>
-                <input type="text" class="form-control" id="editAPIKey" value="<%- key %>">
+                <input type="text" class="form-control" id="editAPIKey" value="<%- key %>" autofocus>
                 <p class="help-block">
                   An API Key is required for adding, editing, or deleting collections. The key will be saved on your device.
                   To get an API Key, contact <a href="mailto:librarycloud@hulmail.harvard.edu">librarycloud@hulmail.harvard.edu</a>.

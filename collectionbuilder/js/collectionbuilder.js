@@ -74,8 +74,9 @@ $(function(){
 
 	/* Let's add an item to a collection! */
 	dispatcher.on("collectionitems:add", function(e) { 
-					lcCollectionItems.addItem(e.item);
-					e.search_result_item.item.trigger("change", e.search_result_item.item);
+					lcCollectionItems.addItem(e.item, function() {
+						e.search_result_item.item.trigger("change", e.search_result_item.item);						
+					});
 				});
 
 	/* Let's add an item to a collection! */
@@ -393,8 +394,8 @@ $(function(){
 			});
 		},
 
-		addItem : function(item) {
-			var result = this.create({item_id: item.id}, {wait: true});
+		addItem : function(item, done) {
+			var result = this.create({item_id: item.id}, {wait: true, success: done});
 		},
 
 		removeItem : function(item) {
@@ -591,8 +592,6 @@ $(function(){
 								  item: this.model,
 								});
 		},
-
-
 	});	
 
 
@@ -639,6 +638,7 @@ $(function(){
 		},
 
 		addItemToCollection : function() {
+			this.$el.find("button").button("loading");
 			dispatcher.trigger("collectionitems:add", {
 								  item: this.model.item,
 								  collection : selectedCollection,

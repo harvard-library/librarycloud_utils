@@ -761,7 +761,8 @@ $(function(){
 					dispatcher.trigger("collectionitems:upload", { ids : ids });
 				}
 			}
-			$(".modal").modal('hide');			
+			this.$("#upload").val("");
+			$(".modal").modal('hide');		
 		},
 	});
 

@@ -398,7 +398,7 @@ $(function(){
 		},
 
 		addItem : function(item, done) {
-			var result = this.create({item_id: item.id}, {wait: true, success: done});
+			return (item.id && this.create({item_id: item.id}, {wait: true, success: done}));
 		},
 
 		removeItem : function(item) {

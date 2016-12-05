@@ -809,6 +809,32 @@ $(function(){
 
 	});
 
+    /************************** Functions *******************************/
+	function handleFileSelect(event) {
+	    var files = event.target.files;
+	    if (files) {
+	        for (var i = 0, f; f = files[i]; i++) {
+	            try {
+	                var textType = /text.*/;
+
+	                if (f.type.match(textType)) {
+	                    var reader = new FileReader();
+	                    reader.onload = (function (file) {
+	                        var contents = reader.result;
+	                        contents = $('#upload').val().trim() + '\n' + contents;
+	                        $('#upload').val(contents);
+	                    });
+
+	                    reader.readAsText(f);
+	                }
+	            }
+	            catch (e) {
+                    //swallow the exception
+	            }
+	        }
+	    }
+	}
+
 	/************************** Initialization **************************/
 	
 	
@@ -844,6 +870,16 @@ $(function(){
 	apiKeyView.render();
 	var pageTitleView = new LCPageTitleView({model: apiKey});
 	pageTitleView.render();
+
+    /* File upload */
+	$('document').ready(function () {
+	    if (window.File && window.FileReader && window.FileList && window.Blob) {
+	        $(document).on('change', '#files', handleFileSelect);
+	    }
+	    else {
+	        $('#files').hide();
+	    }
+	});
 
 	/* Display alert if no API key at launch */
 	if (apiKey.isKeySet()) {

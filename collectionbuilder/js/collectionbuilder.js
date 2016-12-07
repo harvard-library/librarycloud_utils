@@ -772,6 +772,7 @@ $(function () {
 
         events: {
             "click .save": "uploadCollectionItems",
+            "change .upload-files": "uploadFiles",
         },
 
         render: function () {
@@ -789,6 +790,33 @@ $(function () {
             this.$("#upload").val("");
             $(".modal").modal('hide');
         },
+
+        uploadFiles: function (event) {
+            var files = event.target.files;
+            if (files) {
+                for (var i = 0, f; f = files[i]; i++) {
+                    try {
+                        var textType = /text.*/;
+
+                        if (f.type.match(textType)) {
+                            var reader = new FileReader();
+                            reader.onload = (function (file) {
+                                var existingContents = $('#upload').val().trim();
+                                var contents = reader.result;
+                                if (existingContents)
+                                    contents = existingContents + '\n' + contents;
+                                $('#upload').val(contents);
+                            });
+
+                            reader.readAsText(f);
+                        }
+                    }
+                    catch (e) {
+                        //swallow the exception
+                    }
+                }
+            }
+        }
     });
 
     /* Edit API Key */
@@ -832,36 +860,7 @@ $(function () {
 
     });
 
-    /************************** Functions *******************************/
-    function handleFileSelect(event) {
-        var files = event.target.files;
-        if (files) {
-            for (var i = 0, f; f = files[i]; i++) {
-                try {
-                    var textType = /text.*/;
-
-                    if (f.type.match(textType)) {
-                        var reader = new FileReader();
-                        reader.onload = (function (file) {
-                            var existingContents = $('#upload').val().trim();
-                            var contents = reader.result;
-                            if (existingContents)
-                                contents = existingContents + '\n' + contents;
-                            $('#upload').val(contents);
-                        });
-
-                        reader.readAsText(f);
-                    }
-                }
-                catch (e) {
-                    //swallow the exception
-                }
-            }
-        }
-    }
-
     /************************** Initialization **************************/
-
 
     Backbone.history.start()
 
@@ -898,10 +897,7 @@ $(function () {
 
     /* File upload */
     $('document').ready(function () {
-        if (window.File && window.FileReader && window.FileList && window.Blob) {
-            $(document).on('change', '#files', handleFileSelect);
-        }
-        else {
+        if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
             $('#files').hide();
         }
     });

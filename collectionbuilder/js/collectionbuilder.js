@@ -801,11 +801,21 @@ $(function () {
                         if (f.type.match(textType)) {
                             var reader = new FileReader();
                             reader.onload = (function (file) {
-                                var existingContents = $('#upload').val().trim();
-                                var contents = reader.result;
-                                if (existingContents)
-                                    contents = existingContents + '\n' + contents;
-                                $('#upload').val(contents);
+
+                                //pull the existing ids, if any, and remove any empty rows
+                                var existingids = $("#upload").val().split(/[\s,]+/).filter(function (item) {
+                                    return (item);
+                                });
+
+                                var newids = reader.result.split(/[\s,]+/);
+                                
+                                //add the new ids to the existing ones, ignoring duplicates and empty rows
+                                existingids = existingids.concat(newids.filter(function (item) {
+                                    return (existingids.indexOf(item) < 0) && (item);
+                                }));
+
+
+                                $('#upload').val(existingids.join('\r\n'));
                             });
 
                             reader.readAsText(f);

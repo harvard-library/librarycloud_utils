@@ -63,7 +63,6 @@
             </script>
             <div class="panel-body" id="add-collection-button">              
               <script type="text/template" id="t-collection-add">
-
                 <button type="button" class="btn btn-primary " data-toggle="modal" data-target="#collection-add" 
                         <% if (disabled) { %>disabled="disabled"<% } %>>Add Collection</button>
               </script>
@@ -86,7 +85,7 @@
                   <% if (identifier) { %>
                     <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit" <% if (disabled) { %>disabled="disabled"<% } %>>Edit</button>
                     <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item" <% if (disabled) { %>disabled="disabled"<% } %>>Add Items</button>
-                    <button type="button" class="btn btn-default download" >Download Item IDs</button>
+                    <button type="button" class="btn btn-default download" id="download">Download Item IDs</button>
                     <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#collection-upload" <% if (disabled) { %>disabled="disabled"<% } %>>Upload Item IDs</button>
                     <button type="button" class="btn btn-danger  delete" id="delete-collection" <% if (disabled) { %>disabled="disabled"<% } %>>Delete Collection</button>
                   <% } %>

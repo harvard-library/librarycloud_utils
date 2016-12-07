@@ -72,17 +72,23 @@ $(function () {
         var collection = lcCollections.get(lcCollectionItems.collection_id);
         var filename = collection.get('title').trim() + '.txt';
         var ids = _.pluck(lcCollectionItems.models, "id").join('\r\n');
-        var element = document.createElement('a');
 
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(ids));
-        element.setAttribute('download', filename);
+        if (window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(new Blob([ids], 'text/csv'), filename);
+        }
+        else {
+            var element = document.createElement('a');
 
-        element.style.display = 'none';
-        document.body.appendChild(element);
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(ids));
+            element.setAttribute('download', filename);
 
-        element.click();
+            element.style.display = 'none';
+            document.body.appendChild(element);
 
-        document.body.removeChild(element);
+            element.click();
+
+            document.body.removeChild(element);
+        }
     });
 
 

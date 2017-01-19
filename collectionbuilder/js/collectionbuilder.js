@@ -1,7 +1,8 @@
 
 $(function () {
 
-    var urlBase = 'http://api.lib.harvard.edu';
+    var collectionsUrlBase = 'http://localhost:9090';
+    var itemsUrlBase = 'http://api.lib.harvard.edu';
 
     /************************** Dispatch **************************/
     var dispatcher = _.clone(Backbone.Events)
@@ -146,7 +147,7 @@ $(function () {
         },
 
         url: function () {
-            return urlBase + '/v2/collections/' + this.id;
+            return collectionsUrlBase + '/v2/collections/' + this.id;
         },
 
         idAttribute: "identifier",
@@ -215,8 +216,7 @@ $(function () {
 
     var LCCollectionList = Backbone.Collection.extend({
         model: LCCollection,
-        url: urlBase + '/v2/collections?limit=999',
-
+        url: collectionsUrlBase + '/v2/collections?limit=999',
 
         initialize: function (options) {
             // this.on("all", function(e,c){console.log(e);console.log(arguments);});
@@ -245,7 +245,7 @@ $(function () {
         },
 
         url: function () {
-            return urlBase + '/v2/items/' + this.id + ".dc";
+            return itemsUrlBase + '/v2/items/' + this.id + ".dc";
         },
 
         initialize: function (options) {
@@ -301,7 +301,7 @@ $(function () {
     var LCItemSearchResultsList = Backbone.Collection.extend({
         model: LCSearchResultItem,
         url: function () {
-            return urlBase + '/v2/items.dc?q='
+            return itemsUrlBase + '/v2/items.dc?q='
 						+ this.query
 						+ (this.query_start ? "&start=" + this.query_start : "");
         },
@@ -351,7 +351,7 @@ $(function () {
         idAttribute: "item_id",
 
         url: function () {
-            return urlBase + '/v2/collections/' + this.collection.collection_id;
+            return collectionsUrlBase + '/v2/collections/' + this.collection.collection_id;
         },
 
         initialize: function (options) {
@@ -401,7 +401,7 @@ $(function () {
         model: LCCollectionItem,
 
         url: function () {
-            return urlBase + '/v2/collections/' + this.collection_id + '/items';
+            return collectionsUrlBase + '/v2/collections/' + this.collection_id + '/items';
         },
 
         initialize: function (options) {
@@ -879,7 +879,11 @@ $(function () {
     apiKey.fetch();
 
     /* Get the collection list and display it */
-    lcCollections.fetch();
+    if (apiKey.get("key"))
+        lcCollections.fetch({ headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") } });
+    else
+        lcCollections.fetch();
+
     LCCollectionListView.render();
 
 

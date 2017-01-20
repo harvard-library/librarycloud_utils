@@ -218,6 +218,15 @@ $(function () {
         model: LCCollection,
         url: collectionsUrlBase + '/v2/collections?limit=999',
 
+        sync: function (command, model, options) {
+            if (apiKey.get("key")) {
+                options = _.extend(options, {
+                    headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") }
+                });
+            }
+            return Backbone.sync.apply(this, arguments);
+        },
+
         initialize: function (options) {
             // this.on("all", function(e,c){console.log(e);console.log(arguments);});
         },
@@ -544,7 +553,7 @@ $(function () {
         },
 
         render: function () {
-            this.$el.html(this.template(_.extend(this.model.attributes, { disabled: !apiKey.isKeySet() })));
+            this.$el.html(this.template(_.extend(this.model.attributes, { owner: this.model.get("accessRights") && this.model.get("accessRights")[0] == "owner", editor: this.model.get("accessRights") })));
             return this;
         },
 
@@ -879,10 +888,7 @@ $(function () {
     apiKey.fetch();
 
     /* Get the collection list and display it */
-    if (apiKey.get("key"))
-        lcCollections.fetch({ headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") } });
-    else
-        lcCollections.fetch();
+    lcCollections.fetch();
 
     LCCollectionListView.render();
 

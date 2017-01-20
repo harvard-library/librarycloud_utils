@@ -212,6 +212,14 @@ $(function () {
             return Backbone.sync.apply(this, arguments);
         },
 
+        isEditor: function () {
+            return !(this.get("accessRights") === undefined);
+        },
+
+        isOwner: function () {
+            return this.isEditor() && this.get("accessRights")[0] == "owner";
+
+        }
     });
 
     var LCCollectionList = Backbone.Collection.extend({
@@ -553,7 +561,7 @@ $(function () {
         },
 
         render: function () {
-            this.$el.html(this.template(_.extend(this.model.attributes, { owner: this.model.get("accessRights") && this.model.get("accessRights")[0] == "owner", editor: this.model.get("accessRights") })));
+            this.$el.html(this.template(_.extend(this.model.attributes, { owner: this.model.isOwner(), editor: this.model.isEditor() })));
             return this;
         },
 
@@ -609,7 +617,7 @@ $(function () {
         },
 
         render: function () {
-            this.$el.html(this.template(this.model.attributes));
+            this.$el.html(this.template(_.extend(this.model.attributes, { editor: selectedCollection.isEditor() })));
             return this;
         },
 

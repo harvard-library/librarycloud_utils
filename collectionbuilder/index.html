@@ -52,9 +52,9 @@
             </div>
             <div class="panel-body">
               These are all the collections available within LibraryCloud. Select
-              a collection to view and edit, or add a new collection. To edit an
-              existing collection, you must use the same API Key that was used to
-              create the collection.
+              a collection to view and edit, or add a new collection. To add or remove items from an
+              existing collection, you must be an editor or owner of the collecion.  To edit the name, 
+              abstract or access rights for an existing collection you must be an owner of the collection.
             </div>
             <ul id="collection-list" class="list-group">
             </ul>
@@ -106,7 +106,7 @@
                 <td><%- item_id %></td>
                 <td>
                   <button type="button" class="view btn btn-default btn-xs" id="view-item" data-toggle="modal" data-target="#item-view">View</button>
-                  <button type="button" class="remove btn btn-default btn-xs" id="remove-item">Remove</button>
+                  <button type="button" class="remove btn btn-default btn-xs" id="remove-item" <% if (!editor) { %>disabled="disabled"<% } %>>Remove</button>
                 </td>
               </script>
             </tbody>

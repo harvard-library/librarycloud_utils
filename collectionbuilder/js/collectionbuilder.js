@@ -9,6 +9,10 @@ $(function () {
 
     /* API key updated. Update any views that check whether the API key is populated */
     dispatcher.on("apikey:updated", function (e) {
+        //TODO: after the API Key is updated we need to refresh the collections list because permissions
+        // may have changed
+        lcCollections.fetch();
+        dispatcher.trigger("collection:refresh");
         addCollectionButtonView.render();
         titleView.render();
     });
@@ -135,6 +139,39 @@ $(function () {
         searchResultCountView.render();
     });
 
+    /* Search for users */
+    dispatcher.on("user:search", function (e) {
+        lcUserSearchItems.setQuery(e.query);
+        lcUserSearchItems.setUserSearchResults(e.users);
+    });
+
+    /* Notify the user results list to update, once the search has completed */
+    dispatcher.on("user:refresh", function (e) {
+        LCUserSearchListView.render();
+        //searchPaginationView.render();
+        //searchResultCountView.render();
+    });
+
+    ///* Let's add a user to a collection! */
+    //dispatcher.on("user:add", function (e) {
+    //    lcCollectionUsers.addItem(e.item, function () {
+    //        e.search_result_item.item.trigger("change", e.search_result_item.item);
+    //    });
+    //});
+
+    ///* Remove a use from a collection */
+    //dispatcher.on("user:remove", function (e) {
+    //    lcCollectionUsers.removeItem(e.item);
+    //});
+
+    dispatcher.on("userpermissions:load", function (e) {
+        lcPermissions.selectCollection(e.collection_id);
+    });
+
+    dispatcher.on("userpermissions:refresh", function (e) {
+        LCCollectionPermissionListView.render();
+    });
+
 
     /************************** Models **************************/
     var LCCollection = Backbone.Model.extend({
@@ -166,6 +203,11 @@ $(function () {
         },
 
         sync: function (command, model, options) {
+            if (apiKey.get("key")) {
+                options = _.extend(options, {
+                    headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") }
+                });
+            }
             /* Override the default sync behavior for adding collections.
 			   Use POST instead of PUT. */
             if (command == "update" && !model.id) {
@@ -339,11 +381,6 @@ $(function () {
         setQuery: function (query) {
             this.query = query;
             this.setPage(0);
-            this.fetch({
-                success: function (collection, response, options) {
-                    dispatcher.trigger("search:refresh");
-                }
-            });
         },
 
         setPage: function (start) {
@@ -354,8 +391,7 @@ $(function () {
                 }
             });
         }
-    })
-
+    });
 
     var LCCollectionItem = Backbone.Model.extend({
         defaults: function () {
@@ -445,6 +481,93 @@ $(function () {
 
     });
 
+    var LCUserPermission = Backbone.Model.extend({
+        defaults: function () {
+            return {
+                name: "",
+                role: "",
+            }
+        },
+
+        initialize: function (options) {
+            options || (options = {});
+            this.id = options.id;
+        },
+
+    });
+
+    var LCPermissionList = Backbone.Collection.extend({
+        model: LCUserPermission,
+        url: function () {
+            return collectionsUrlBase + '/v2/collections/' + this.collection_id + '/user';
+        },
+        sync: function (command, model, options) {
+            if (apiKey.get("key")) {
+                options = _.extend(options, {
+                    headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") }
+                });
+            }
+            return Backbone.sync.apply(this, arguments);
+        },
+        addItem: function (title) {
+            var result = this.create({ title: title }, { wait: true });
+        },
+
+        selectCollection: function (collection_id) {
+            this.collection_id = collection_id;
+            this.fetch({
+                success: function (collection, response, options) {
+                    dispatcher.trigger("userpermissions:refresh");
+                }
+            });
+        },
+    });
+
+    var LCUser = Backbone.Model.extend({
+        defaults: function () {
+            return {
+                name: "",
+                email: "",
+            }
+        },
+
+        initialize: function (options) {
+            options || (options = {});
+            this.id = options.id;
+        },
+
+    });
+
+    var LCUserSearchResultsList = Backbone.Collection.extend({
+        model: LCUser,
+        url: function () {
+            return collectionsUrlBase + '/v2/user?q='
+						+ this.query;
+        },
+        sync: function (command, model, options) {
+            if (apiKey.get("key")) {
+                options = _.extend(options, {
+                    headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") }
+                });
+            }
+            return Backbone.sync.apply(this, arguments);
+        },
+
+        /* Items from the collection currently being viewed */
+        setUserSearchResults: function (users) {
+            this.search_results = users;
+        },
+
+        setQuery: function (query) {
+            this.query = query;
+            this.fetch({
+                success: function (collection, response, options) {
+                    dispatcher.trigger("user:refresh");
+                }
+            });
+        },
+    });
+
     var LCAPIKey = Backbone.Model.extend({
         defaults: function () {
             return {
@@ -475,15 +598,20 @@ $(function () {
 
     });
 
-
-
     /* Define variables for the collection lists */
     var lcCollections = new LCCollectionList;
     var lcCollectionItems = new LCCollectionItemList;
     var lcSearchResultItems = new LCItemSearchResultsList;
-
+    var lcPermissions = new LCPermissionList;
+    var lcUserSearchItems = new LCUserSearchResultsList;
 
     /************************** Views **************************/
+
+    /**********************************************************
+
+    COLLECTIONS MANAGEMENT
+
+    ***********************************************************/
 
     /* Display a single collection in the list and handle selecting a collection */
     var LCCollectionView = Backbone.View.extend({
@@ -554,6 +682,7 @@ $(function () {
         events: {
             "click button.delete": "deleteCollection",
             "click button.download": "downloadCollectionItems",
+            "click button.permissions": "loadPermissions",
         },
 
         initialize: function () {
@@ -583,6 +712,10 @@ $(function () {
             dispatcher.trigger("collection:download");
         },
 
+        loadPermissions: function () {
+            dispatcher.trigger("userpermissions:load", { collection_id: this.model.id, });
+        },
+
     });
 
     /* Display collection summary information */
@@ -599,7 +732,6 @@ $(function () {
             return this;
         },
     });
-
 
     /* Display an item from the selected collection */
     var LCCollectionItemListRowView = Backbone.View.extend({
@@ -634,6 +766,32 @@ $(function () {
         },
     });
 
+    /* Edit collection name and abstract */
+    var LCCollectionEditView = Backbone.View.extend({
+        el: $("#edit-collection"),
+        template: _.template($('#t-edit-collection').html()),
+        initialize: function () {
+            this.listenTo(this.model, "change", this.render);
+        },
+
+        events: {
+            "click .save": "saveCollection",
+        },
+
+        render: function () {
+            this.$el.html(this.template(this.model.attributes));
+            return this;
+        },
+
+        saveCollection: function () {
+            this.model.set({
+                title: this.$("#editCollectionName").val(),
+                abstract: this.$("#editCollectionAbstract").val()
+            });
+            this.model.save({ wait: true });
+            $(".modal").modal('hide');
+        },
+    });
 
     /* Display the list of items from the selected collection */
     var LCCollectionItemListView = new Backbone.CollectionView({
@@ -642,6 +800,78 @@ $(function () {
         collection: lcCollectionItems,
         modelView: LCCollectionItemListRowView,
     });
+
+    /* Upload collection items */
+    var LCCollectionUploadView = Backbone.View.extend({
+        el: $("#upload-collection"),
+        template: _.template($('#t-upload-collection').html()),
+        initialize: function () {
+            this.listenTo(this.model, "change", this.render);
+        },
+
+        events: {
+            "click .save": "uploadCollectionItems",
+            "change .upload-files": "uploadFiles",
+        },
+
+        render: function () {
+            this.$el.html(this.template(this.model.attributes));
+            return this;
+        },
+
+        uploadCollectionItems: function () {
+            if (this.$("#upload").val()) {
+                var ids = this.$("#upload").val().split(/[\s,]+/);
+                if (ids) {
+                    dispatcher.trigger("collectionitems:upload", { ids: ids });
+                }
+            }
+            this.$("#upload").val("");
+            $(".modal").modal('hide');
+        },
+
+        uploadFiles: function (event) {
+            var files = event.target.files;
+            if (files) {
+                for (var i = 0, f; f = files[i]; i++) {
+                    try {
+                        var textType = /text.*/;
+
+                        if (f.type.match(textType)) {
+                            var reader = new FileReader();
+                            reader.onload = (function (file) {
+
+                                //pull the existing ids, if any, and remove any empty rows
+                                var existingids = $("#upload").val().split(/[\s,]+/).filter(function (item) {
+                                    return (item);
+                                });
+
+                                var newids = reader.result.split(/[\s,]+/);
+
+                                //add the new ids to the existing ones, ignoring duplicates and empty rows
+                                existingids = existingids.concat(newids.filter(function (item) {
+                                    return (existingids.indexOf(item) < 0) && (item);
+                                }));
+
+                                $("#upload").val(existingids.join('\r\n'));
+                            });
+
+                            reader.readAsText(f);
+                        }
+                    }
+                    catch (e) {
+                        //swallow the exception
+                    }
+                }
+            }
+        }
+    });
+
+    /**********************************************************
+
+    ITEM SEARCH
+
+    ***********************************************************/
 
     /* Display the search form */
     var LCSearchFormView = Backbone.View.extend({
@@ -657,7 +887,6 @@ $(function () {
             });
         }
     });
-
 
     /* Display a single item in the search results */
     var LCSearchItemView = Backbone.View.extend({
@@ -752,99 +981,113 @@ $(function () {
         },
     });
 
-    /* Edit collection name and abstract */
-    var LCCollectionEditView = Backbone.View.extend({
-        el: $("#edit-collection"),
-        template: _.template($('#t-edit-collection').html()),
-        initialize: function () {
-            this.listenTo(this.model, "change", this.render);
-        },
+    /**********************************************************
 
+    PERMISSIONS
+
+    ***********************************************************/
+
+    /* Display the user permissions form */
+    var LCPermissionsSearchFormView = Backbone.View.extend({
+        el: $("#edit-collection-permissions form.user-search"),
+        template: _.template($('#edit-collection-permissions form.user-search').html()),
         events: {
-            "click .save": "saveCollection",
+            "submit": "search",
         },
-
-        render: function () {
-            this.$el.html(this.template(this.model.attributes));
-            return this;
-        },
-
-        saveCollection: function () {
-            this.model.set({
-                title: this.$("#editCollectionName").val(),
-                abstract: this.$("#editCollectionAbstract").val()
+        search: function (e) {
+            dispatcher.trigger("user:search", {
+                query: this.$el.find("input").val(),
             });
-            this.model.save({ wait: true });
-            $(".modal").modal('hide');
-        },
-    });
-
-    /* Edit collection name and abstract */
-    var LCCollectionUploadView = Backbone.View.extend({
-        el: $("#upload-collection"),
-        template: _.template($('#t-upload-collection').html()),
-        initialize: function () {
-            this.listenTo(this.model, "change", this.render);
-        },
-
-        events: {
-            "click .save": "uploadCollectionItems",
-            "change .upload-files": "uploadFiles",
-        },
-
-        render: function () {
-            this.$el.html(this.template(this.model.attributes));
-            return this;
-        },
-
-        uploadCollectionItems: function () {
-            if (this.$("#upload").val()) {
-                var ids = this.$("#upload").val().split(/[\s,]+/);
-                if (ids) {
-                    dispatcher.trigger("collectionitems:upload", { ids: ids });
-                }
-            }
-            this.$("#upload").val("");
-            $(".modal").modal('hide');
-        },
-
-        uploadFiles: function (event) {
-            var files = event.target.files;
-            if (files) {
-                for (var i = 0, f; f = files[i]; i++) {
-                    try {
-                        var textType = /text.*/;
-
-                        if (f.type.match(textType)) {
-                            var reader = new FileReader();
-                            reader.onload = (function (file) {
-
-                                //pull the existing ids, if any, and remove any empty rows
-                                var existingids = $("#upload").val().split(/[\s,]+/).filter(function (item) {
-                                    return (item);
-                                });
-
-                                var newids = reader.result.split(/[\s,]+/);
-                                
-                                //add the new ids to the existing ones, ignoring duplicates and empty rows
-                                existingids = existingids.concat(newids.filter(function (item) {
-                                    return (existingids.indexOf(item) < 0) && (item);
-                                }));
-
-
-                                $('#upload').val(existingids.join('\r\n'));
-                            });
-
-                            reader.readAsText(f);
-                        }
-                    }
-                    catch (e) {
-                        //swallow the exception
-                    }
-                }
-            }
         }
     });
+
+    var LCUserSearchItemView = Backbone.View.extend({
+        tagName: 'tr',
+        template: _.template($('#t-user-searchresults-list-item').html()),
+
+        //events: {
+        //    "click button": "addUserToCollection",
+        //},
+
+        initialize: function () {
+            this.listenTo(this.model, "change", this.render);
+        },
+
+        inCollection: function () {
+            var email = this.model.attributes.email;
+            var exists = false;
+            if (lcPermissions) {
+                exists = lcPermissions.find(function (a) {
+                    return (a.attributes.user.email == email);
+                });
+            }
+            return (exists != undefined);
+        },
+
+        render: function () {
+            this.$el.html(this.template(_.extend(this.model.attributes, {notInCollection: !this.inCollection()})));
+            return this;
+        },
+
+        addUserToCollection: function () {
+            this.$el.find("button").button("loading");
+            //dispatcher.trigger("collectionitems:add", {
+            //    item: this.model.item,
+            //    collection: selectedCollection,
+            //    search_result_item: this.model,
+            //});
+        },
+
+    });
+
+    /* Display the user search results */
+    var LCUserSearchListView = new Backbone.CollectionView({
+        el: $("table#user-searchresults-list"),
+        selectable: false,
+        collection: lcUserSearchItems,
+        modelView: LCUserSearchItemView,
+    });
+
+
+    /* Edit collection permissions */
+    var LCCollectionPermissionView = Backbone.View.extend({
+        tagName: 'tr',
+        template: _.template($('#t-edit-collection-permissions-item').html()),
+        initialize: function () {
+            this.listenTo(this.model, "change", this.render);
+        },
+
+        //events: {
+        //    "click .save": "saveCollectionPermissions",
+        //},
+
+        render: function () {
+            this.$el.html(this.template(
+                _.extend(this.model.attributes, { owner: this.model.attributes.role.name == "owner", editor: this.model.attributes.role.name == "editor" })));
+            return this;
+        },
+
+        //saveCollectionPermissions: function () {
+            
+        //    $(".modal").modal('hide');
+        //},
+    });
+
+    /* Display the user permissions */
+    var LCCollectionPermissionListView = new Backbone.CollectionView({
+        el: $("table#user-list"),
+        selectable: false,
+        collection: lcPermissions,
+        modelView: LCCollectionPermissionView,
+    });
+
+    
+
+    /**********************************************************
+
+    API KEY
+
+    ***********************************************************/
 
     /* Edit API Key */
     var LCAPIKeyEditView = Backbone.View.extend({
@@ -911,6 +1154,9 @@ $(function () {
     uploadCollectionView.render();
     var addCollectionButtonView = new LCCollectionAddView();
     addCollectionButtonView.render();
+
+    /* Permissions views */
+    var userSearchView = new LCPermissionsSearchFormView();
 
     /* Search views */
     var searchView = new LCSearchFormView({ model: selectedCollection });

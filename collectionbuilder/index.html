@@ -1,6 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,284 +18,359 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
-  <body>
+</head>
+<body>
 
     <div id="collection-builder" class="container-fluid">
-      <div class="page-header">
-        <h1>
-            <script type="text/template" id="t-title">
-              Collection Builder <small>Made with LibraryCloud</small>
-              <button type="button" class="btn <% if (key) { %> btn-default <% } else { %> btn-primary <% } %> pull-right  api-key" data-toggle="modal" data-target="#global-api-key">
-                <% if (key) { %> Update <% } else { %> Set <% } %> API Key</button>
-            </script>
-        </h1>
-      </div>
+        <div class="page-header">
+            <h1>
+                <script type="text/template" id="t-title">
+                    Collection Builder
+                    <small>Made with LibraryCloud</small>
+                    <button type="button" class="btn <% if (key) { %> btn-default <% } else { %> btn-primary <% } %> pull-right  api-key" data-toggle="modal" data-target="#global-api-key">
+                        <% if (key) { %> Update <% } else { %> Set <% } %> API Key
+                    </button>
+                </script>
+            </h1>
+        </div>
 
-      <div class="row">
-        <div class="col-md-12 ">
-          <div class="alert alert-warning alert-dismissable api-key-alert" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-              An API Key is required for adding, editing, or deleting collections. To get an API Key, contact 
-              <a href="mailto:librarycloud@hulmail.harvard.edu">librarycloud@hulmail.harvard.edu</a>.
-              If you have an API key, enter it by clicking <a href="#" data-toggle="modal" data-target="#global-api-key">here</a>.
+        <div class="row">
+            <div class="col-md-12 ">
+                <div class="alert alert-warning alert-dismissable api-key-alert" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    An API Key is required for adding, editing, or deleting collections. To get an API Key, contact
+                    <a href="mailto:librarycloud@hulmail.harvard.edu">librarycloud@hulmail.harvard.edu</a>.
+                    If you have an API key, enter it by clicking <a href="#" data-toggle="modal" data-target="#global-api-key">here</a>.
+                </div>
             </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="col-md-4 ">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">All Collections</h3>
-            </div>
-            <div class="panel-body">
-              These are all the collections available within LibraryCloud. Select
-              a collection to view and edit, or add a new collection. To add or remove items from an
-              existing collection, you must be an editor or owner of the collecion.  To edit the name, 
-              abstract or access rights for an existing collection you must be an owner of the collection.
-            </div>
-            <ul id="collection-list" class="list-group">
-            </ul>
-            <script type="text/template" id="t-collection-list">
-              <a href='#<%- identifier %>'><%- title %></a>
-            </script>
-            <div class="panel-body" id="add-collection-button">              
-              <script type="text/template" id="t-collection-add">
-                <button type="button" class="btn btn-primary " data-toggle="modal" data-target="#collection-add" 
+        <div class="row">
+            <div class="col-md-4 ">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">All Collections</h3>
+                    </div>
+                    <div class="panel-body">
+                        These are all the collections available within LibraryCloud. Select
+                        a collection to view and edit, or add a new collection. To add or remove items from an
+                        existing collection, you must be an editor or owner of the collecion.  To edit the name,
+                        abstract or access rights for an existing collection you must be an owner of the collection.
+                    </div>
+                    <ul id="collection-list" class="list-group"></ul>
+                    <script type="text/template" id="t-collection-list">
+                        <a href='#<%- identifier %>'><%- title %></a>
+                    </script>
+                    <div class="panel-body" id="add-collection-button">
+                        <script type="text/template" id="t-collection-add">
+                            <button type="button" class="btn btn-primary " data-toggle="modal" data-target="#collection-add"
                         <% if (disabled) { %>disabled="disabled"<% } %>>Add Collection</button>
-              </script>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-8 ">
-           <div class="panel panel-default" id="collection-detail">      
-             <script type="text/template" id="t-collection-detail">
-                <div class="panel-heading">
-                  <h3 class="panel-title" id="collection-title">
-                    <% if (identifier) { %>
-                      <%- title %> <small><%- identifier %></small></h3>
-                    <% } else { %>
-                      Select a collection to view or edit
-                    <% } %>
+                        </script>
+                    </div>
                 </div>
-                <div id="sections-document" class="panel-body">
-                  <% if (abstract) { %><p><strong>Abstract: </strong><%- abstract %></p><% } %>
-                  <% if (identifier) { %>
-                    <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Edit</button>
-                    <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item" <% if (!editor) { %>disabled="disabled"<% } %>>Add Items</button>
-                    <button type="button" class="btn btn-default download" id="download">Download Item IDs</button>
-                    <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#collection-upload" <% if (!editor) { %>disabled="disabled"<% } %>>Upload Item IDs</button>
-                    <button type="button" class="btn btn-danger  delete" id="delete-collection" <% if (!owner) { %>disabled="disabled"<% } %>>Delete Collection</button>
-                  <% } %>
-                </div>
-              </script>
             </div>
-          <table id="item-list" class="table table-striped"> 
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>ID</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <script type="text/template" id="t-collection-item">
-                <td class="title"><%- title %></td>
-                <td><%- item_id %></td>
-                <td>
-                  <button type="button" class="view btn btn-default btn-xs" id="view-item" data-toggle="modal" data-target="#item-view">View</button>
-                  <button type="button" class="remove btn btn-default btn-xs" id="remove-item" <% if (!editor) { %>disabled="disabled"<% } %>>Remove</button>
-                </td>
-              </script>
-            </tbody>
-          </table>
+            <div class="col-md-8 ">
+                <div class="panel panel-default" id="collection-detail">
+                    <script type="text/template" id="t-collection-detail">
+                        <div class="panel-heading">
+                            <h3 id="collection-title" class="panel-title">
+                                <% if (identifier) { %>
+                                <%- title %> <small><%- identifier %></small>
+                            </h3>
+                            <% if (abstract) { %><strong>Abstract: </strong><%- abstract %><% } %>
+                            <br />
+                            <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Edit</button>
+                            <button type="button" class="btn btn-default edit permissions" data-toggle="modal" data-target="#collection-permissions-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Permissions</button>
+                            <button type="button" class="btn btn-danger  delete" id="delete-collection" <% if (!owner) { %>disabled="disabled"<% } %>>Delete Collection</button>
+                            <% } else { %>
+                            Select a collection to view or edit
+                            <% } %>
+                        </div>
+                        <div id="sections-document" class="panel-body">
+
+                            <% if (identifier) { %>
+
+                            <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item" <% if (!editor) { %>disabled="disabled"<% } %>>Add Items</button>
+                            <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#collection-upload" <% if (!editor) { %>disabled="disabled"<% } %>>Upload Item IDs</button>
+                            <button type="button" class="btn btn-default download" id="download">Download Item IDs</button>
+
+                            <% } %>
+                        </div>
+                    </script>
+                </div>
+                <table id="item-list" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>ID</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <script type="text/template" id="t-collection-item">
+                    <td class="title"><%- title %></td>
+                    <td><%- item_id %></td>
+                    <td>
+                        <button type="button" class="view btn btn-default btn-xs" id="view-item" data-toggle="modal" data-target="#item-view">View</button>
+                        <button type="button" class="remove btn btn-default btn-xs" id="remove-item" <% if (!editor) { %>disabled="disabled"<% } %>>Remove</button>
+                    </td>
+                    </script>
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
-  
+
 
     <div class="modal " id="item-view">
-      <div id="view-item" class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <script type="text/template" id="t-view-item">
-              <div class="modal-header">
-                <strong>View Item</strong>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>            
-              </div>
-              <div class="modal-body">
-                <dl class="dl-horizontal">
-                    <dt>Title</dt>
-                    <dd><%- title %></dd>
-                    <dt>Type</dt>
-                    <dd><%- type %></dd>
-                    <dt>Creator</dt>
-                    <dd><%- creator %></dd>
-                    <dt>Contributor</dt>
-                    <dd><%- contributor %></dd>
-                    <dt>Publisher</dt>
-                    <dd><%- publisher %></dd>
-                    <dt>Language</dt>
-                    <dd><%- language %></dd>
-                    <dt>Format</dt>
-                    <dd><%- format %></dd>
-                    <dt>Description</dt>
-                    <dd><%- description %></dd>
-                    <dt>Subject</dt>
-                    <dd><%- subject %></dd>
-                    <dt>Coverage</dt>
-                    <dd><%- coverage %></dd>
-                    <dt>Identifier</dt>
-                    <dd><%- identifier %></dd>
-                </dl>
-              </div>
-            </script>
-          </div>
-      </div>
+        <div id="view-item" class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <script type="text/template" id="t-view-item">
+                    <div class="modal-header">
+                        <strong>View Item</strong>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    <div class="modal-body">
+                        <dl class="dl-horizontal">
+                            <dt>Title</dt>
+                            <dd><%- title %></dd>
+                            <dt>Type</dt>
+                            <dd><%- type %></dd>
+                            <dt>Creator</dt>
+                            <dd><%- creator %></dd>
+                            <dt>Contributor</dt>
+                            <dd><%- contributor %></dd>
+                            <dt>Publisher</dt>
+                            <dd><%- publisher %></dd>
+                            <dt>Language</dt>
+                            <dd><%- language %></dd>
+                            <dt>Format</dt>
+                            <dd><%- format %></dd>
+                            <dt>Description</dt>
+                            <dd><%- description %></dd>
+                            <dt>Subject</dt>
+                            <dd><%- subject %></dd>
+                            <dt>Coverage</dt>
+                            <dd><%- coverage %></dd>
+                            <dt>Identifier</dt>
+                            <dd><%- identifier %></dd>
+                        </dl>
+                    </div>
+                </script>
+            </div>
+        </div>
     </div>
 
     <div class="modal " id="collection-add-item">
-      <div id="add-items" class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Add Items</h4>
-          </div>
-          <div class="modal-body">
-            <form class="form-inline search-form">
-              <div class="input-group">
-                <input type="text" class="form-control" id="item-search" placeholder="Search for an item to add" autofocus>
-                <span class="input-group-btn">
-                  <button type="submit" class="btn btn-default">Search</button>
-                </span>
-              </div>
-            </form>             
-            <div id="search-results-count">
-              <script type="text/template" id="t-search-results-count">
-                <h5><%- count %> records found (<%- page_start %> to <%- page_end %> shown)</h5>
-              </script>
+        <div id="add-items" class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Add Items</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-inline search-form">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="item-search" placeholder="Search for an item to add" autofocus>
+                            <span class="input-group-btn">
+                                <button type="submit" class="btn btn-default">Search</button>
+                            </span>
+                        </div>
+                    </form>
+                    <div id="search-results-count">
+                        <script type="text/template" id="t-search-results-count">
+                            <h5><%- count %> records found (<%- page_start %> to <%- page_end %> shown)</h5>
+                        </script>
+                    </div>
+                    <table id="search-results-list" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>ID</th>
+                                <th>Action</th>
+                            </tr>
+                            <script type="text/template" id="t-search-results-item">
+                        <td class="title"><%- primary_title %><br /><small><%- secondary_title %></small></td>
+                        <td><%- library_cloud_id %></td>
+                        <td>
+                            <% if (in_collection) { %>
+                            <em>In collection</em>
+                            <% } else { %>
+                            <button type="button" class="btn btn-primary btn-xs" data-loading-text="Adding...">Add to collection</button>
+                            <% } %>
+                        </td>
+                        </script>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div id="search-pagination">
+                        <script type="text/template" id="t-search-pagination">
+                            <nav>
+                                <ul class="pager">
+                                    <li class="previous <%- show_previous %>"><a href="#" aria-label="Previous">Previous</a></li>
+                                    <li class="next <%- show_next %>"><a href="#" aria-label="Next">Next</a></li>
+                                </ul>
+                            </nav>
+                        </script>
+                    </div>
+                </div>
             </div>
-            <table id="search-results-list" class="table table-striped"> 
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>ID</th>
-                  <th>Action</th>
-                </tr>
-                <script type="text/template" id="t-search-results-item">
-                  <td class="title"><%- primary_title %><br/><small><%- secondary_title %></small></td>
-                  <td><%- library_cloud_id %></td>
-                  <td><% if (in_collection) { %>
-                        <em>In collection</em>
-                      <% } else { %>
-                        <button type="button" class="btn btn-primary btn-xs" data-loading-text="Adding...">Add to collection</button>
-                      <% } %>
-                  </td>
-                </script>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>              
-            <div id="search-pagination">
-              <script type="text/template" id="t-search-pagination">
-                <nav>
-                  <ul class="pager">
-                    <li class="previous <%- show_previous %>"><a href="#" aria-label="Previous">Previous</a></li>
-                    <li class="next <%- show_next %>"><a href="#" aria-label="Next">Next</a></li>
-                  </ul>
-                </nav>              
-              </script>
+        </div>
+    </div>
+
+    <div class="modal " id="collection-edit">
+        <div id="edit-collection" class="modal-dialog modal-lg">
+            <script type="text/template" id="t-edit-collection">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Edit Collection</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="editCollectionName">Collection Name</label>
+                                <input type="text" class="form-control" id="editCollectionName" value="<%- title %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCollectionAbstract">Collection Abstract</label>
+                                <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- abstract %></textarea>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary save">Save</button>
+                                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </script>
+        </div>
+    </div>
+
+    <div class="modal " id="collection-permissions-edit">
+        <div id="edit-collection-permissions" class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Edit Collection Permissions</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-inline user-search">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="item-permission-search" placeholder="Search for a user to add" autofocus>
+                            <span class="input-group-btn">
+                                <button type="submit" class="btn btn-default">Search</button>
+                            </span>
+                        </div>
+                    </form>
+                    <div id="permission-search-results-count">
+                        <script type="text/template" id="t-permission-search-results-count">
+                            <h5><%- count %> users found (<%- page_start %> to <%- page_end %> shown)</h5>
+                        </script>
+                    </div>
+                    <table id="user-searchresults-list" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <script type="text/template" id="t-user-searchresults-list-item">
+                                <td class="title"><%- name %></td>
+                                <td><%- email %></td>
+                                <td><% if (notInCollection) { %> HAHA <% } %></td>
+                            </script>
+                        </tbody>
+                    </table>
+                    <div>
+                            <table id="user-list" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <script type="text/template" id="t-edit-collection-permissions-item">
+                                        <td class="title"><%- user.name %></td>
+                                        <td><%- user.email %></td>
+                                        <td><%- role.name %></td>
+                                        <td>
+                                            <% if (editor) { %><button type="button" class="remove btn btn-default btn-xs" id="remove-item">Make owner</button><% } %>
+                                        </td>
+                                    </script>
+                                </tbody>
+                            </table>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary save">Save</button>
+                                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
+                            </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
 
-  <div class="modal " id="collection-edit">
-    <div id="edit-collection" class="modal-dialog modal-lg">
-      <script type="text/template" id="t-edit-collection">    
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Edit Collection</h4>
-          </div>
-          <div class="modal-body">          
-            <form >
-              <div class="form-group">
-                <label for="editCollectionName">Collection Name</label>
-                <input type="text" class="form-control" id="editCollectionName" value="<%- title %>" autofocus>  
-              </div>
-              <div class="form-group">
-                <label for="editCollectionAbstract">Collection Abstract</label>
-                <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- abstract %></textarea>
-              </div>
-              <div class="form-group">
-                <button type="button" class="btn btn-primary save">Save</button>
-                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
-              </div>
-            </form>             
-          </div>
+    <div class="modal " id="collection-upload">
+        <div id="upload-collection" class="modal-dialog modal-lg">
+            <script type="text/template" id="t-upload-collection">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Upload Items</h4>
+                        <input type="file" id="files" class="upload-files" multiple />
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="upload">Upload IDs</label>
+                                <p class="help-block">Paste a list of LibraryCloud item IDs, one per line, to be added to the collection</p>
+                                <textarea class="form-control" id="upload" rows="10" autofocus></textarea>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary save">Save</button>
+                                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </script>
         </div>
-      </script>
     </div>
-  </div>
 
-  <div class="modal " id="collection-upload">
-    <div id="upload-collection" class="modal-dialog modal-lg">
-      <script type="text/template" id="t-upload-collection">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Upload Items</h4>
-              <input type="file" id="files" class="upload-files" multiple />
-          </div>
-          <div class="modal-body">          
-            <form >
-              <div class="form-group">
-                <label for="upload">Upload IDs</label>
-                <p class="help-block">Paste a list of LibraryCloud item IDs, one per line, to be added to the collection</p>
-                <textarea class="form-control" id="upload" rows="10" autofocus></textarea>
-              </div>
-              <div class="form-group">
-                <button type="button" class="btn btn-primary save">Save</button>
-                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
-              </div>
-            </form>             
-          </div>
+    <div class="modal " id="global-api-key">
+        <div id="edit-api-key" class="modal-dialog">
+            <script type="text/template" id="t-edit-api-key">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Set API Key</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="editAPIKey">API Key</label>
+                                <input type="text" class="form-control" id="editAPIKey" value="<%- key %>" autofocus>
+                                <p class="help-block">
+                                    An API Key is required for adding, editing, or deleting collections. The key will be saved on your device.
+                                    To get an API Key, contact <a href="mailto:librarycloud@hulmail.harvard.edu">librarycloud@hulmail.harvard.edu</a>.
+                                </p>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary save">Save</button>
+                                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </script>
         </div>
-      </script>
     </div>
-  </div>
-
-  <div class="modal " id="global-api-key">
-    <div id="edit-api-key" class="modal-dialog">
-      <script type="text/template" id="t-edit-api-key">    
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Set API Key</h4>
-          </div>
-          <div class="modal-body">          
-            <form >
-              <div class="form-group">
-                <label for="editAPIKey">API Key</label>
-                <input type="text" class="form-control" id="editAPIKey" value="<%- key %>" autofocus>
-                <p class="help-block">
-                  An API Key is required for adding, editing, or deleting collections. The key will be saved on your device.
-                  To get an API Key, contact <a href="mailto:librarycloud@hulmail.harvard.edu">librarycloud@hulmail.harvard.edu</a>.
-                </p>                
-              </div>
-              <div class="form-group">
-                <button type="button" class="btn btn-primary save">Save</button>
-                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
-              </div>
-            </form>             
-          </div>
-        </div>
-      </script>
-    </div>
-  </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
@@ -307,5 +382,5 @@
     <script src="js/backbone.collectionView.min.js"></script>
     <script src="js/bootbox.min.js"></script>
     <script src="js/collectionbuilder.js"></script>
-  </body>
+</body>
 </html>

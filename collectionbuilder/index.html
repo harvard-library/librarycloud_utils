@@ -281,35 +281,44 @@
                             <script type="text/template" id="t-user-searchresults-list-item">
                                 <td class="title"><%- name %></td>
                                 <td><%- email %></td>
-                                <td><% if (notInCollection) { %> HAHA <% } %></td>
+                                <td><% if (notInCollection) { %> 
+                                    <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button> 
+                                    <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>
+                                    <% } else { %>
+                                    In collection
+                                    <% } %>
+                                </td>
                             </script>
                         </tbody>
                     </table>
-                    <div>
-                            <table id="user-list" class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <script type="text/template" id="t-edit-collection-permissions-item">
-                                        <td class="title"><%- user.name %></td>
-                                        <td><%- user.email %></td>
-                                        <td><%- role.name %></td>
-                                        <td>
-                                            <% if (editor) { %><button type="button" class="remove btn btn-default btn-xs" id="remove-item">Make owner</button><% } %>
-                                        </td>
-                                    </script>
-                                </tbody>
-                            </table>
-                            <div class="form-group">
-                                <button type="button" class="btn btn-primary save">Save</button>
-                                <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
-                            </div>
+                    <table id="user-list" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <script type="text/template" id="t-edit-collection-permissions-item">
+                                <td class="title"><%- user.name %></td>
+                                <td><%- user.email %></td>
+                                <td><%- role.name %></td>
+                                <td>
+                                    <% if (editor) { %>
+                                    <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button>
+                                    <% } else { %> 
+                                    <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>  
+                                    <% } %>
+                                    <button type="button" class="remove btn btn-default btn-xs remove-user">Remove User</button>
+                                </td>
+                            </script>
+                        </tbody>
+                    </table>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary save">Save</button>
+                        <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
                     </div>
                 </div>
             </div>

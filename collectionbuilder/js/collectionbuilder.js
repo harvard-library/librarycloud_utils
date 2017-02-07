@@ -142,7 +142,6 @@ $(function () {
     /* Search for users */
     dispatcher.on("user:search", function (e) {
         lcUserSearchItems.setQuery(e.query);
-        lcUserSearchItems.setUserSearchResults(e.users);
     });
 
     /* Notify the user results list to update, once the search has completed */
@@ -164,7 +163,17 @@ $(function () {
     //    lcCollectionUsers.removeItem(e.item);
     //});
 
+    dispatcher.on("userpermissions:add", function (e) {
+        lcPermissions.addUser(e.user, e.role, null);
+    });
+
+    dispatcher.on("userpermissions:remove", function (e) {
+        lcPermissions.removeUser(e.user);
+    });
+    
+
     dispatcher.on("userpermissions:load", function (e) {
+        lcUserSearchItems.reset();
         lcPermissions.selectCollection(e.collection_id);
     });
 
@@ -255,11 +264,11 @@ $(function () {
         },
 
         isEditor: function () {
-            return !(this.get("accessRights") === undefined);
+            return this.attributes.accessRights;
         },
 
         isOwner: function () {
-            return this.isEditor() && this.get("accessRights")[0] == "owner";
+            return this.attributes.accessRights && this.attributes.accessRights.role.name == "owner";
 
         }
     });
@@ -489,6 +498,15 @@ $(function () {
             }
         },
 
+        sync: function (command, model, options) {
+            if (apiKey.get("key")) {
+                options = _.extend(options, {
+                    headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") }
+                });
+            }
+            return Backbone.sync.apply(this, arguments);
+        },
+
         initialize: function (options) {
             options || (options = {});
             this.id = options.id;
@@ -501,6 +519,7 @@ $(function () {
         url: function () {
             return collectionsUrlBase + '/v2/collections/' + this.collection_id + '/user';
         },
+
         sync: function (command, model, options) {
             if (apiKey.get("key")) {
                 options = _.extend(options, {
@@ -509,8 +528,15 @@ $(function () {
             }
             return Backbone.sync.apply(this, arguments);
         },
-        addItem: function (title) {
-            var result = this.create({ title: title }, { wait: true });
+
+
+        addUser: function (user, role, done) {
+            return (this.create({ user:user, role: role }, { wait: true, success: done }));
+        },
+
+        removeUser: function (user) {
+            user.attributes.id = user.attributes.user.id;
+            user.destroy({ wait: true });
         },
 
         selectCollection: function (collection_id) {
@@ -527,7 +553,7 @@ $(function () {
         defaults: function () {
             return {
                 name: "",
-                email: "",
+                email: ""
             }
         },
 
@@ -541,7 +567,7 @@ $(function () {
     var LCUserSearchResultsList = Backbone.Collection.extend({
         model: LCUser,
         url: function () {
-            return collectionsUrlBase + '/v2/user?q='
+            return collectionsUrlBase + '/v2/users?q='
 						+ this.query;
         },
         sync: function (command, model, options) {
@@ -553,11 +579,6 @@ $(function () {
             return Backbone.sync.apply(this, arguments);
         },
 
-        /* Items from the collection currently being viewed */
-        setUserSearchResults: function (users) {
-            this.search_results = users;
-        },
-
         setQuery: function (query) {
             this.query = query;
             this.fetch({
@@ -567,6 +588,37 @@ $(function () {
             });
         },
     });
+
+    var LCRole = Backbone.Model.extend({
+        defaults: function () {
+            return {
+                name: "",
+                description: ""
+            }
+        },
+
+        initialize: function (options) {
+            options || (options = {});
+            this.id = options.id;
+        },
+
+    });
+
+    var LCRoleList = Backbone.Collection.extend({
+        model: LCRole,
+        url: function () {
+            return collectionsUrlBase + '/v2/roles';
+        },
+        sync: function (command, model, options) {
+            if (apiKey.get("key")) {
+                options = _.extend(options, {
+                    headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") }
+                });
+            }
+            return Backbone.sync.apply(this, arguments);
+        },
+    });
+
 
     var LCAPIKey = Backbone.Model.extend({
         defaults: function () {
@@ -600,6 +652,7 @@ $(function () {
 
     /* Define variables for the collection lists */
     var lcCollections = new LCCollectionList;
+    var lcRoles = new LCRoleList;
     var lcCollectionItems = new LCCollectionItemList;
     var lcSearchResultItems = new LCItemSearchResultsList;
     var lcPermissions = new LCPermissionList;
@@ -987,8 +1040,35 @@ $(function () {
 
     ***********************************************************/
 
-    /* Display the user permissions form */
-    var LCPermissionsSearchFormView = Backbone.View.extend({
+    var makeOwner = function (user, collection) {
+        dispatcher.trigger("userpermissions:add", {
+            user: user,
+            role: lcRoles.find(function (r) {
+                return r.attributes.name == "owner";
+            }),
+            collection: collection,
+        });
+    };
+
+    var makeEditor = function (user, collection) {
+        dispatcher.trigger("userpermissions:add", {
+            user: user,
+            role: lcRoles.find(function (r) {
+                return r.attributes.name == "editor";
+            }),
+            collection: collection,
+        });
+    };
+
+    var removeUser = function (user, collection) {
+        dispatcher.trigger("userpermissions:remove", {
+            user: user,
+            collection: collection,
+        });
+    };
+
+    /* Manage the user search function */
+    var LCUserSearchFormView = Backbone.View.extend({
         el: $("#edit-collection-permissions form.user-search"),
         template: _.template($('#edit-collection-permissions form.user-search').html()),
         events: {
@@ -1004,13 +1084,20 @@ $(function () {
     var LCUserSearchItemView = Backbone.View.extend({
         tagName: 'tr',
         template: _.template($('#t-user-searchresults-list-item').html()),
-
-        //events: {
-        //    "click button": "addUserToCollection",
-        //},
+        events: {
+            "click button.make-owner": "makeOwner",
+            "click button.make-editor": "makeEditor",
+        },
 
         initialize: function () {
             this.listenTo(this.model, "change", this.render);
+        },
+
+        makeOwner: function (e) {
+            makeOwner({ id: this.model.attributes.id, name: this.model.attributes.name, email: this.model.attributes.email}, selectedCollection);
+        },
+        makeEditor: function (e) {
+            makeEditor({ id: this.model.attributes.id, name: this.model.attributes.name, email: this.model.attributes.email }, selectedCollection);
         },
 
         inCollection: function () {
@@ -1028,16 +1115,6 @@ $(function () {
             this.$el.html(this.template(_.extend(this.model.attributes, {notInCollection: !this.inCollection()})));
             return this;
         },
-
-        addUserToCollection: function () {
-            this.$el.find("button").button("loading");
-            //dispatcher.trigger("collectionitems:add", {
-            //    item: this.model.item,
-            //    collection: selectedCollection,
-            //    search_result_item: this.model,
-            //});
-        },
-
     });
 
     /* Display the user search results */
@@ -1053,24 +1130,34 @@ $(function () {
     var LCCollectionPermissionView = Backbone.View.extend({
         tagName: 'tr',
         template: _.template($('#t-edit-collection-permissions-item').html()),
+        events: {
+            "click button.make-owner": "makeOwner",
+            "click button.make-editor": "makeEditor",
+            "click button.remove-user": "removeUser",
+        },
         initialize: function () {
             this.listenTo(this.model, "change", this.render);
         },
 
-        //events: {
-        //    "click .save": "saveCollectionPermissions",
-        //},
-
         render: function () {
             this.$el.html(this.template(
-                _.extend(this.model.attributes, { owner: this.model.attributes.role.name == "owner", editor: this.model.attributes.role.name == "editor" })));
+                _.extend(this.model.attributes,
+                {
+                    owner: this.model.attributes.role.name == "owner",
+                    editor: this.model.attributes.role.name == "editor",
+                })));
             return this;
         },
 
-        //saveCollectionPermissions: function () {
-            
-        //    $(".modal").modal('hide');
-        //},
+        makeOwner: function (e) {
+            makeOwner(this.model.attributes.user, selectedCollection);
+        },
+        makeEditor: function (e) {
+            makeEditor(this.model.attributes.user, selectedCollection);
+        },
+        removeUser: function (e) {
+            removeUser(this.model, selectedCollection);
+        },
     });
 
     /* Display the user permissions */
@@ -1141,8 +1228,10 @@ $(function () {
     /* Get the collection list and display it */
     lcCollections.fetch();
 
-    LCCollectionListView.render();
+    /* Get the list of possible roles */
+    lcRoles.fetch();
 
+    LCCollectionListView.render();
 
     /* Collection display and editing views */
     var selectedCollection = new LCCollection();
@@ -1156,7 +1245,7 @@ $(function () {
     addCollectionButtonView.render();
 
     /* Permissions views */
-    var userSearchView = new LCPermissionsSearchFormView();
+    var userSearchView = new LCUserSearchFormView();
 
     /* Search views */
     var searchView = new LCSearchFormView({ model: selectedCollection });

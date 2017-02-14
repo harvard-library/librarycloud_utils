@@ -154,14 +154,16 @@ $(function () {
     dispatcher.on("userpermissions:add", function (e) {
         lcPermissions.addUser(e.user, e.role, function () {
             lcPermissions.fetch();
-            userSearchView.search();
+            if (userSearchView.validate(false))
+                userSearchView.search();
         });
     });
 
     dispatcher.on("userpermissions:remove", function (e) {
         lcPermissions.removeUser(e.user, function () {
             lcPermissions.fetch();
-            userSearchView.search();
+            if (userSearchView.validate(false))
+                userSearchView.search();
         });
         
     });
@@ -586,8 +588,16 @@ $(function () {
             return Backbone.sync.apply(this, arguments);
         },
 
-        setQuery: function (query) {
-            this.query = query;
+        validate: function (showError) {
+            if (!this.query || !this.query.length > 2) {
+                if (showError)
+                    dispatcher.trigger("global:error", { message: "User search term must be at least 3 characters." });
+                return false;
+            }
+            return true;
+        },
+
+        search: function () {
             this.fetch({
                 success: function (collection, response, options) {
                     collection.reset(collection.filter(function (item) {
@@ -597,6 +607,14 @@ $(function () {
                 }
             });
         },
+
+        setQuery: function (query) {
+            this.query = query;
+            if (this.validate(true)) {
+                this.search();
+            }
+        },
+        
     });
 
     var LCRole = Backbone.Model.extend({

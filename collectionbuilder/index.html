@@ -281,12 +281,9 @@
                             <script type="text/template" id="t-user-searchresults-list-item">
                                 <td class="title"><%- name %></td>
                                 <td><%- email %></td>
-                                <td><% if (notInCollection) { %> 
+                                <td>
                                     <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button> 
                                     <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>
-                                    <% } else { %>
-                                    In collection
-                                    <% } %>
                                 </td>
                             </script>
                         </tbody>

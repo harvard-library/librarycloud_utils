@@ -151,24 +151,19 @@ $(function () {
         //searchResultCountView.render();
     });
 
-    ///* Let's add a user to a collection! */
-    //dispatcher.on("user:add", function (e) {
-    //    lcCollectionUsers.addItem(e.item, function () {
-    //        e.search_result_item.item.trigger("change", e.search_result_item.item);
-    //    });
-    //});
-
-    ///* Remove a use from a collection */
-    //dispatcher.on("user:remove", function (e) {
-    //    lcCollectionUsers.removeItem(e.item);
-    //});
-
     dispatcher.on("userpermissions:add", function (e) {
-        lcPermissions.addUser(e.user, e.role, null);
+        lcPermissions.addUser(e.user, e.role, function () {
+            lcPermissions.fetch();
+            userSearchView.search();
+        });
     });
 
     dispatcher.on("userpermissions:remove", function (e) {
-        lcPermissions.removeUser(e.user);
+        lcPermissions.removeUser(e.user, function () {
+            lcPermissions.fetch();
+            userSearchView.search();
+        });
+        
     });
     
 
@@ -264,11 +259,12 @@ $(function () {
         },
 
         isEditor: function () {
-            return this.attributes.accessRights;
+            return (this.attributes.accessRights && this.attributes.accessRights.role && this.attributes.accessRights.role.name == "editor")
+                || this.isOwner();
         },
 
         isOwner: function () {
-            return this.attributes.accessRights && this.attributes.accessRights.role.name == "owner";
+            return this.attributes.accessRights && this.attributes.accessRights.role && this.attributes.accessRights.role.name == "owner";
 
         }
     });
@@ -534,9 +530,9 @@ $(function () {
             return (this.create({ user:user, role: role }, { wait: true, success: done }));
         },
 
-        removeUser: function (user) {
+        removeUser: function (user, done) {
             user.attributes.id = user.attributes.user.id;
-            user.destroy({ wait: true });
+            user.destroy({ wait: true, success: done });
         },
 
         selectCollection: function (collection_id) {
@@ -562,6 +558,17 @@ $(function () {
             this.id = options.id;
         },
 
+        inCollection: function () {
+            var email = this.attributes.email;
+            var exists = false;
+            if (lcPermissions) {
+                exists = lcPermissions.find(function (a) {
+                    return (a.attributes.user.email == email);
+                });
+            }
+            return (exists != undefined);
+        },
+
     });
 
     var LCUserSearchResultsList = Backbone.Collection.extend({
@@ -583,6 +590,9 @@ $(function () {
             this.query = query;
             this.fetch({
                 success: function (collection, response, options) {
+                    collection.reset(collection.filter(function (item) {
+                        return !item.inCollection();
+                    }));
                     dispatcher.trigger("user:refresh");
                 }
             });
@@ -1074,7 +1084,7 @@ $(function () {
         events: {
             "submit": "search",
         },
-        search: function (e) {
+        search: function () {
             dispatcher.trigger("user:search", {
                 query: this.$el.find("input").val(),
             });
@@ -1100,19 +1110,10 @@ $(function () {
             makeEditor({ id: this.model.attributes.id, name: this.model.attributes.name, email: this.model.attributes.email }, selectedCollection);
         },
 
-        inCollection: function () {
-            var email = this.model.attributes.email;
-            var exists = false;
-            if (lcPermissions) {
-                exists = lcPermissions.find(function (a) {
-                    return (a.attributes.user.email == email);
-                });
-            }
-            return (exists != undefined);
-        },
+        
 
         render: function () {
-            this.$el.html(this.template(_.extend(this.model.attributes, {notInCollection: !this.inCollection()})));
+            this.$el.html(this.template(this.model.attributes));
             return this;
         },
     });

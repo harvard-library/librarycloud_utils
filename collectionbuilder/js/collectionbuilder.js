@@ -892,6 +892,7 @@ $(function () {
 
         events: {
             "click .save": "uploadCollectionItems",
+            "click .cancel": "clearUpload",
             "change .upload-files": "uploadFiles",
         },
 
@@ -907,7 +908,12 @@ $(function () {
                     dispatcher.trigger("collectionitems:upload", { ids: ids });
                 }
             }
+            this.clearUpload();
+        },
+
+        clearUpload: function() {
             this.$("#upload").val("");
+            this.$("#files").val("");
             $(".modal").modal('hide');
         },
 
@@ -1215,6 +1221,7 @@ $(function () {
         saveKey: function () {
             this.model.set("key", this.$("#editAPIKey").val());
             this.model.save();
+            dispatcher.trigger("collection:refresh");
             $(".modal").modal('hide');
         },
 

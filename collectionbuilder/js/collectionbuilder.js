@@ -1,8 +1,8 @@
 
 $(function () {
 
-    var collectionsUrlBase = 'http://localhost:9090';
-    var itemsUrlBase = 'http://api.lib.harvard.edu';
+    var collectionsUrlBase = 'https://cole.hul.harvard.edu';
+    var itemsUrlBase = 'https://cole.hul.harvard.edu';
 
     /************************** Dispatch **************************/
     var dispatcher = _.clone(Backbone.Events)

@@ -1,8 +1,18 @@
 
 $(function () {
 
+    /*
+    // UAT
     var collectionsUrlBase = 'https://cole.hul.harvard.edu';
     var itemsUrlBase = 'https://cole.hul.harvard.edu';
+
+    // PROD
+    var collectionsUrlBase = 'https://api.lib.harvard.edu';
+    var itemsUrlBase = 'https://api.lib.harvard.edu';
+    */
+
+    var collectionsUrlBase = 'https://api.lib.harvard.edu';
+    var itemsUrlBase = 'https://api.lib.harvard.edu';
 
     /************************** Dispatch **************************/
     var dispatcher = _.clone(Backbone.Events)
@@ -77,6 +87,14 @@ $(function () {
         var collection = lcCollections.get(lcCollectionItems.collection_id);
         var filename = collection.get('title').trim() + '.txt';
         var ids = _.pluck(lcCollectionItems.models, "id").join('\r\n');
+
+        dispatcher.trigger("items:download", { ids: ids, filename : filename, });
+
+    });
+
+    dispatcher.on("items:download", function (e) {
+        var ids = e.ids;
+        var filename = e.filename;
 
         if (window.navigator.msSaveOrOpenBlob) {
             window.navigator.msSaveOrOpenBlob(new Blob([ids], 'text/csv'), filename);
@@ -1056,6 +1074,9 @@ $(function () {
     /* Display the number of results for the search results */
     var LCSearchItemListResultCountView = Backbone.View.extend({
         el: $("#search-results-count"),
+        events: {
+            "click .savesearch": "saveSearch",
+        },
         template: _.template($('#t-search-results-count').html()),
         render: function () {
             this.$el.html(this.template(_.extend(
@@ -1065,6 +1086,12 @@ $(function () {
 				},
 				this.model.attributes)));
             return this;
+        },
+
+        saveSearch: function () {
+            var filename = 'bob.txt';
+            var ids = _.pluck(_.pluck(lcSearchResultItems.models, "item"), "id").join('\r\n');
+            dispatcher.trigger("items:download", { ids: ids, filename: filename, });
         },
     });
 

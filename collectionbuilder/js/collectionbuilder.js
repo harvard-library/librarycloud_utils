@@ -14,6 +14,8 @@ $(function () {
     var collectionsUrlBase = 'https://api.lib.harvard.edu';
     var itemsUrlBase = 'https://api.lib.harvard.edu';
 
+    var isDC = true;
+
     /************************** Dispatch **************************/
     var dispatcher = _.clone(Backbone.Events)
 
@@ -329,7 +331,54 @@ $(function () {
         },
 
         url: function () {
-            return itemsUrlBase + '/v2/items/' + this.id + ".dc";
+            return itemsUrlBase + '/v2/items/' + this.id + (isDC ? ".dc" : "");
+        },
+
+        getName: function (nameArray, matchingAttribute) {
+            var match = null;
+            if (nameArray) {
+                if (nameArray.isArray) {
+                    var matches = nameArray.filter(function (name) {
+                        return name.role && name.role.roleTerm && name.role.roleTerm["#text"] == matchingAttribute;
+                    });
+
+                    var match = matches ? matches[0] : null;
+                }
+                else {
+                    match = nameArray;
+                }
+            }
+
+            if (match && match["namePart"])
+                return match["namePart"];
+
+            return "";
+        },
+
+        getGenre: function(genreArray) {
+            return genreArray ? (genreArray.isArray ? genreArray[0]: genreArray)["#text"] : "";
+        },
+
+        getPropertyFromArray(array, property) {
+            return array ? ((array.length > 1 ? array[0] : array)[property]) : "";
+        },
+
+        parse: function (response, options) {
+            if (!isDC) {
+                this.attributes || (this.attributes = {});
+                this.attributes.title = this.getPropertyFromArray(response.titleInfo, "title");
+                this.attributes.creator = this.getName(response.name, "creator");
+                this.attributes.contributor = this.getName(response.name, "contributor");
+                this.attributes.type = this.getPropertyFromArray(response.genre, "#text");
+                this.attributes.publisher = response.originInfo.publisher;
+                this.attributes.language = response.language ? this.getPropertyFromArray(response.language.languageTerm, "#text") : "";
+                this.attributes.format = response.physicalDescription ? this.getPropertyFromArray(response.physicalDescription.form, "#text") : "" ;
+                this.attributes.description = this.getPropertyFromArray(response.abstract, "#text");
+                this.attributes.subject = response.subject ? response.subject.topic : "";
+                this.attributes.coverage = response.subject ? response.subject.geographic : "";
+                return this;
+            }
+            return response;
         },
 
         initialize: function (options) {
@@ -357,7 +406,10 @@ $(function () {
         },
 
         initialize: function (options) {
-            this.item = new LCItem({ id: this.getLibraryCloudId(this.get("identifier")) });
+            if (isDC)
+                this.item = new LCItem({ id: this.getLibraryCloudId(this.get("identifier")) });
+            else 
+                this.item = new LCItem({ id: this.get("recordInfo").recordIdentifier["#text"] });
             this.listenTo(this.item, "change", this.updateSearchResultItem);
         },
 
@@ -385,7 +437,7 @@ $(function () {
     var LCItemSearchResultsList = Backbone.Collection.extend({
         model: LCSearchResultItem,
         url: function () {
-            return itemsUrlBase + '/v2/items.dc?q='
+            return itemsUrlBase + '/v2/items' + (isDC ? ".dc" : "") + '?q='
 						+ this.query
 						+ (this.query_start ? "&start=" + this.query_start : "");
         },
@@ -395,7 +447,8 @@ $(function () {
             this.attributes.count = response.pagination.numFound;
             this.attributes.limit = response.pagination.limit;
             this.attributes.start = response.pagination.start;
-            return (response.items != null) ? response.items.dc : [];
+            return (response.items != null) ?
+                (isDC ? response.items.dc : response.items.mods) : [];
         },
 
         /* Items from the collection currently being viewed */

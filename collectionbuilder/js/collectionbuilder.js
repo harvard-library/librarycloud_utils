@@ -1,8 +1,9 @@
-
 $(function () {
 
-    var collectionsUrlBase = 'http://localhost:9090';
-    var itemsUrlBase = 'http://api.lib.harvard.edu';
+  var collectionsUrlBase = 'http://localhost:9090';
+  var itemsUrlBase = 'http://api.lib.harvard.edu';
+  // var collectionsUrlBase = 'http://localhost:8080/collections';
+  // var itemsUrlBase = 'http://localhost:8080/librarycloud';
 
     /************************** Dispatch **************************/
     var dispatcher = _.clone(Backbone.Events)
@@ -63,7 +64,8 @@ $(function () {
 
     /* Notify collection item list view to update, once the items for a collection have been loaded */
     dispatcher.on("collectionitems:refresh", function () {
-        LCCollectionItemListView.render();
+      LCCollectionItemListView.render();
+      pagerView.refresh();
     });
 
     /* Add a new collection */
@@ -100,7 +102,9 @@ $(function () {
     /* Let's add an item to a collection! */
     dispatcher.on("collectionitems:add", function (e) {
         lcCollectionItems.addItem(e.item, function () {
-            e.search_result_item.item.trigger("change", e.search_result_item.item);
+          e.search_result_item.item.trigger("change", e.search_result_item.item);
+          $("#item-list tr:last").addClass("added");
+
         });
     });
 
@@ -165,9 +169,9 @@ $(function () {
             if (userSearchView.validate(false))
                 userSearchView.search();
         });
-        
+
     });
-    
+
 
     dispatcher.on("userpermissions:load", function (e) {
         lcUserSearchItems.reset();
@@ -248,7 +252,7 @@ $(function () {
                 headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") },
                 dataFilter: function (data, type) {
                     if (type == "json" && data == "") {
-                        // Prevents throwing an error if we get a 
+                        // Prevents throwing an error if we get a
                         // 201 response with empty string, which is
                         // valid but causes jQuery to choke when
                         // trying to parse the JSON response
@@ -424,9 +428,9 @@ $(function () {
             this.set({ title: this.item.get("title") })
         },
 
-        /* We need to override the default sync behavior for adding items 
-		   to a collection. Use POST instead of PUT, pass an array of 
-		   dictionaries instead of a single dictionary, and exclude 
+        /* We need to override the default sync behavior for adding items
+		   to a collection. Use POST instead of PUT, pass an array of
+		   dictionaries instead of a single dictionary, and exclude
 		   LCCollectionItem attributes other than the item_id */
         sync: function (command, model, options) {
             options = _.extend(options, {
@@ -457,7 +461,7 @@ $(function () {
 
     });
 
-    var LCCollectionItemList = Backbone.Collection.extend({
+    var LCCollectionItemList = Backbone.PageableCollection.extend({
         model: LCCollectionItem,
 
         url: function () {
@@ -483,8 +487,28 @@ $(function () {
         },
 
         removeItem: function (item) {
-            item.destroy({ wait: true });
+          var that = this;
+          item.destroy({
+            wait: true,
+            success: function() {
+              that.fetch({
+                success: function (collection, response, options) {
+                  dispatcher.trigger("collectionitems:refresh");
+                }
+              });
+            }
+          });
         },
+
+        state: {
+          pageSize: 10,
+          currentPage: 0
+        },
+
+        queryParams: {
+            currentPage: "page",
+            pageSize: "size",
+        }
 
     });
 
@@ -614,7 +638,7 @@ $(function () {
                 this.search();
             }
         },
-        
+
     });
 
     var LCRole = Backbone.Model.extend({
@@ -728,6 +752,7 @@ $(function () {
         collection: lcCollections,
         modelView: LCCollectionView,
     });
+
 
     var LCCollectionAddView = Backbone.View.extend({
         el: $("#add-collection-button"),
@@ -881,6 +906,54 @@ $(function () {
         collection: lcCollectionItems,
         modelView: LCCollectionItemListRowView,
     });
+
+  var LCCollectionItemListViewPager = Backbone.View.extend({
+    el: $("#collection-item-pager"),
+    events: {
+      "click .prev": "previousPage",
+      "click .next": "nextPage",
+    },
+
+    previousPage: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var that = this;
+      lcCollectionItems.getPreviousPage({
+        success: function() {
+          $("#item-list tr").removeClass("added");
+          that.refresh();
+        }
+      });
+
+    },
+
+    nextPage: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var that = this;
+      lcCollectionItems.getNextPage({
+        success: function() {
+          $("#item-list tr").removeClass("added");
+          that.refresh();
+        }
+      });
+
+    },
+
+    refresh: function() {
+      if(lcCollectionItems.state.currentPage > 0) {
+        $(".prev", this.$el).removeClass("disabled");
+      } else {
+        $(".prev", this.$el).addClass("disabled");
+      }
+
+      if(lcCollectionItems.state.pageSize > lcCollectionItems.size()){
+        $(".next", this.$el).addClass("disabled");
+      } else {
+        $(".next", this.$el).removeClass("disabled");
+      }
+    }
+  });
 
     /* Upload collection items */
     var LCCollectionUploadView = Backbone.View.extend({
@@ -1134,7 +1207,7 @@ $(function () {
             makeEditor({ id: this.model.attributes.id, name: this.model.attributes.name, email: this.model.attributes.email }, selectedCollection);
         },
 
-        
+
 
         render: function () {
             this.$el.html(this.template(this.model.attributes));
@@ -1193,7 +1266,7 @@ $(function () {
         modelView: LCCollectionPermissionView,
     });
 
-    
+
 
     /**********************************************************
 
@@ -1283,6 +1356,7 @@ $(function () {
     apiKeyView.render();
     var pageTitleView = new LCPageTitleView({ model: apiKey });
     pageTitleView.render();
+    var pagerView = new LCCollectionItemListViewPager();
 
     /* File upload */
     $('document').ready(function () {
@@ -1297,5 +1371,3 @@ $(function () {
     }
 
 });
-
-

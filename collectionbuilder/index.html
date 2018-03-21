@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -118,6 +118,12 @@
                     </script>
                     </tbody>
                 </table>
+                <nav aria-label="pager" id="collection-item-pager">
+                  <ul class="pagination">
+                    <li class="page-item"><a class="page-link btn prev disabled" href="#">Previous</a></li>
+                    <li class="page-item"><a class="page-link btn next disabled" href="#">Next</a></li>
+                  </ul>
+                </nav>
             </div>
         </div>
     </div>
@@ -282,7 +288,7 @@
                                 <td class="title"><%- name %></td>
                                 <td><%- email %></td>
                                 <td>
-                                    <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button> 
+                                    <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button>
                                     <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>
                                 </td>
                             </script>
@@ -305,8 +311,8 @@
                                 <td>
                                     <% if (editor) { %>
                                     <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button>
-                                    <% } else { %> 
-                                    <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>  
+                                    <% } else { %>
+                                    <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>
                                     <% } %>
                                     <button type="button" class="remove btn btn-default btn-xs remove-user">Remove User</button>
                                 </td>
@@ -382,10 +388,11 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
-    <script src="js/backbone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="js/backbone-min.js"></script>
     <script src="js/backbone.localStorage-min.js"></script>
     <script src="js/backbone.collectionView.min.js"></script>
+    <script src="js/backbone.paginator.min.js"></script>
     <script src="js/bootbox.min.js"></script>
     <script src="js/collectionbuilder.js"></script>
 </body>

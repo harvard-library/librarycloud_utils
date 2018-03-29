@@ -20,7 +20,7 @@ $(function () {
 
     /* Error notifications */
     dispatcher.on("global:error", function (e) {
-        bootbox.alert({
+      bootbox.alert({
             title: "Error",
             message: "We've encountered an error" + (e.message ? ": " + e.message : "")
         });
@@ -30,7 +30,7 @@ $(function () {
     /* Notify the list of collection items to update, since the selected collection has changed */
     dispatcher.on("collection:select", function (e) {
         selectedCollection = e;
-        lcCollectionItems.selectCollection(e.get("identifier"));
+        lcCollectionItems.selectCollection(e.get("systemId"));
         dispatcher.trigger("collection:refresh");
     });
 
@@ -70,14 +70,14 @@ $(function () {
 
     /* Add a new collection */
     dispatcher.on("collection:add", function (e) {
-        lcCollections.addItem(e.title);
+        lcCollections.addItem(e.setName);
     });
 
 
     /* Download a list of collection item IDs */
     dispatcher.on("collection:download", function (e) {
         var collection = lcCollections.get(lcCollectionItems.collection_id);
-        var filename = collection.get('title').trim() + '.txt';
+        var filename = collection.get('setName').trim() + '.txt';
         var ids = _.pluck(lcCollectionItems.models, "id").join('\r\n');
 
         if (window.navigator.msSaveOrOpenBlob) {
@@ -187,9 +187,9 @@ $(function () {
     var LCCollection = Backbone.Model.extend({
         defaults: function () {
             return {
-                title: "",
-                identifier: "",
-                abstract: "",
+                setName: "",
+                systemId: "",
+                setDescription: "",
             }
         },
 
@@ -197,18 +197,17 @@ $(function () {
             return collectionsUrlBase + '/v2/collections/' + this.id;
         },
 
-        idAttribute: "identifier",
+        idAttribute: "systemId",
 
         initialize: function (options) {
-            // this.on("all", function(e,c){console.log(e);console.log(arguments);});
             this.on("invalid", function () {
                 dispatcher.trigger("global:error", { message: this.validationError });
             });
         },
 
         validate: function () {
-            if (!this.get("title")) {
-                return "Collection title must not be empty";
+            if (!this.get("setName")) {
+                return "Set Name must not be empty";
             }
         },
 
@@ -219,7 +218,7 @@ $(function () {
                 });
             }
             /* Override the default sync behavior for adding collections.
-			   Use POST instead of PUT. */
+         Use POST instead of PUT. */
             if (command == "update" && !model.id) {
                 command = "create";
                 var t = this;
@@ -243,7 +242,7 @@ $(function () {
             options = _.extend(options, {
                 error: function (jqXHR, textStatus, errorThrown) {
                     var message = errorThrown;
-                    if (statusCode = 401) {
+                  if (statusCode == 401) {
                         message += " (Your API key may not be valid)"
                     }
                     dispatcher.trigger("global:error", { message: message });
@@ -292,8 +291,8 @@ $(function () {
             // this.on("all", function(e,c){console.log(e);console.log(arguments);});
         },
 
-        addItem: function (title) {
-            var result = this.create({ title: title }, { wait: true });
+        addItem: function (setName) {
+            var result = this.create({ setName: setName }, { wait: true });
         },
     });
 
@@ -319,9 +318,13 @@ $(function () {
         },
 
         initialize: function (options) {
-            options || (options = {});
-            this.id = options.id;
-            this.fetch();
+          options || (options = {});
+          this.id = options.id;
+          this.fetch({
+            error: function(obj, response, opts) {
+              obj.attributes.title = "Unknown object";
+            }
+          });
         },
 
     });
@@ -372,8 +375,8 @@ $(function () {
         model: LCSearchResultItem,
         url: function () {
             return itemsUrlBase + '/v2/items.dc?q='
-						+ this.query
-						+ (this.query_start ? "&start=" + this.query_start : "");
+            + this.query
+            + (this.query_start ? "&start=" + this.query_start : "");
         },
 
         parse: function (response, options) {
@@ -425,19 +428,19 @@ $(function () {
         },
 
         updateCollectionItem: function () {
-            this.set({ title: this.item.get("title") })
+            this.set({ setName: this.item.get("setName") })
         },
 
         /* We need to override the default sync behavior for adding items
-		   to a collection. Use POST instead of PUT, pass an array of
-		   dictionaries instead of a single dictionary, and exclude
-		   LCCollectionItem attributes other than the item_id */
+       to a collection. Use POST instead of PUT, pass an array of
+       dictionaries instead of a single dictionary, and exclude
+       LCCollectionItem attributes other than the item_id */
         sync: function (command, model, options) {
             options = _.extend(options, {
                 contentType: 'application/json',
                 headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    var message = errorThrown;
+                  var message = errorThrown;
                     if (statusCode = 401) {
                         message += " (Your API key may not be valid)"
                     }
@@ -601,7 +604,7 @@ $(function () {
         model: LCUser,
         url: function () {
             return collectionsUrlBase + '/v2/users?q='
-						+ this.query;
+            + this.query;
         },
         sync: function (command, model, options) {
             if (apiKey.get("key")) {
@@ -723,7 +726,7 @@ $(function () {
 
         tagName: 'li',
         className: 'list-group-item',
-        template: _.template("<a href='#<%- identifier %>'><%- title %></a>"),
+        template: _.template("<a href='#<%- systemId %>'><%- setName %></a>"),
 
         events: {
             "click a": "selectCollection",
@@ -769,10 +772,10 @@ $(function () {
 
         createCollection: function () {
             bootbox.prompt({
-                title: "Choose a name for your collection",
+                title: "Choose a name for your set",
                 callback: function (result) {
                     if (result !== null) {
-                        dispatcher.trigger("collection:add", { title: result });
+                        dispatcher.trigger("collection:add", { setName: result });
                     }
                 },
                 animate: false,
@@ -803,7 +806,7 @@ $(function () {
         deleteCollection: function () {
             bootbox.confirm({
                 message: "Are you sure you want to delete the collection \"" +
-            				_.escape(this.model.get("title")) + "\"? This action cannot be undone.",
+                    _.escape(this.model.get("title")) + "\"? This action cannot be undone.",
                 callback: _.bind(function (result) {
                     if (result) {
                         dispatcher.trigger("collection:remove", { collection: this.model, });
@@ -856,7 +859,7 @@ $(function () {
 
         render: function () {
             this.$el.html(this.template(_.extend(this.model.attributes, { editor: selectedCollection.isEditor() })));
-            return this;
+              return this;
         },
 
         viewItem: function (e) {
@@ -891,8 +894,8 @@ $(function () {
 
         saveCollection: function () {
             this.model.set({
-                title: this.$("#editCollectionName").val(),
-                abstract: this.$("#editCollectionAbstract").val()
+                setName: this.$("#editCollectionName").val(),
+                setDescription: this.$("#editCollectionAbstract").val()
             });
             this.model.save({ wait: true });
             $(".modal").modal('hide');
@@ -1120,7 +1123,7 @@ $(function () {
                 show_previous: this.show_previous() ? "" : "disabled",
                 show_next: this.show_next() ? "" : "disabled"
             },
-							this.model.attributes);
+              this.model.attributes);
             this.$el.html(this.template(a));
             return this;
         },
@@ -1132,11 +1135,11 @@ $(function () {
         template: _.template($('#t-search-results-count').html()),
         render: function () {
             this.$el.html(this.template(_.extend(
-				{
-				    page_end: Math.min(this.model.attributes.start + this.model.attributes.limit, this.model.attributes.count),
-				    page_start: Math.min(this.model.attributes.start + 1, this.model.attributes.count),
-				},
-				this.model.attributes)));
+        {
+            page_end: Math.min(this.model.attributes.start + this.model.attributes.limit, this.model.attributes.count),
+            page_start: Math.min(this.model.attributes.start + 1, this.model.attributes.count),
+        },
+        this.model.attributes)));
             return this;
         },
     });

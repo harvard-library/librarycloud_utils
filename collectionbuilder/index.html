@@ -60,7 +60,7 @@
                     </div>
                     <ul id="collection-list" class="list-group"></ul>
                     <script type="text/template" id="t-collection-list">
-                        <a href='#<%- identifier %>'><%- title %></a>
+                        <a href='#<%- systemId %>'><%- setName %></a>
                     </script>
                     <div class="panel-body" id="add-collection-button">
                         <script type="text/template" id="t-collection-add">
@@ -75,10 +75,10 @@
                     <script type="text/template" id="t-collection-detail">
                         <div class="panel-heading">
                             <h3 id="collection-title" class="panel-title">
-                                <% if (identifier) { %>
-                                <%- title %> <small><%- identifier %></small>
+                                <% if (systemId) { %>
+                                <%- setName %> <small><%- systemId %></small>
                             </h3>
-                            <% if (abstract) { %><strong>Abstract: </strong><%- abstract %><% } %>
+                            <% if (setDescription) { %><strong>Description: </strong><%- setDescription %><% } %>
                             <br />
                             <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Edit</button>
                             <button type="button" class="btn btn-default edit permissions" data-toggle="modal" data-target="#collection-permissions-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Permissions</button>
@@ -89,7 +89,7 @@
                         </div>
                         <div id="sections-document" class="panel-body">
 
-                            <% if (identifier) { %>
+                            <% if (systemId) { %>
 
                             <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item" <% if (!editor) { %>disabled="disabled"<% } %>>Add Items</button>
                             <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#collection-upload" <% if (!editor) { %>disabled="disabled"<% } %>>Upload Item IDs</button>
@@ -237,11 +237,11 @@
                         <form>
                             <div class="form-group">
                                 <label for="editCollectionName">Collection Name</label>
-                                <input type="text" class="form-control" id="editCollectionName" value="<%- title %>" autofocus>
+                                <input type="text" class="form-control" id="editCollectionName" value="<%- setName %>" autofocus>
                             </div>
                             <div class="form-group">
                                 <label for="editCollectionAbstract">Collection Abstract</label>
-                                <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- abstract %></textarea>
+                                <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- setDescription %></textarea>
                             </div>
                             <div class="form-group">
                                 <button type="button" class="btn btn-primary save">Save</button>

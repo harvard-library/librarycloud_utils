@@ -231,18 +231,51 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title">Edit Collection</h4>
+                        <h4 class="modal-title">Set</h4>
                     </div>
                     <div class="modal-body">
                         <form>
                             <div class="form-group">
-                                <label for="editCollectionName">Collection Name</label>
-                                <input type="text" class="form-control" id="editCollectionName" value="<%- setName %>" autofocus>
+                                <label for="editSetName">Set Name</label>
+                                <input type="text" class="form-control" id="editSetName" value="<%- setName %>" autofocus>
                             </div>
                             <div class="form-group">
-                                <label for="editCollectionAbstract">Collection Abstract</label>
-                                <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- setDescription %></textarea>
+                                <label for="editSetSpec">Set Spec</label>
+                                <input type="text" class="form-control" id="editSetSpec" value="<%- setSpec %>" autofocus>
                             </div>
+                            <div class="form-group">
+                                <label for="editSetDescription">Set Description</label>
+                                <textarea class="form-control" id="editSetDescription" rows="3"><%- setDescription %></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="editDcp">DCP</label>
+                                <input id="editDcp" type="checkbox" <% if(dcp) { %>checked="<%- dcp %>"<% } %>/ >
+                            </div>
+                            <div class="form-group">
+                                <label for="editPublic">Public</label>
+                                <input id="editPublic" type="checkbox" <% if(public) { %>checked="true"<% } %>/ >
+                            </div>
+                            <div class="form-group">
+                                <label for="editBaseUrl">Base URL</label>
+                                <input type="text" class="form-control" id="editBaseUrl" value="<%- baseUrl %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCollectionUrn">Collection URN</label>
+                                <input type="text" class="form-control" id="editCollectionUrn" value="<%- collectionUrn %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editThumbnailUrn">Thumbnail URN</label>
+                                <input type="text" class="form-control" id="editThumbnailUrn" value="<%- thumbnailUrn %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editContactName">Contact Name</label>
+                                <input type="text" class="form-control" id="editContactName" value="<%- contactName %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editContactDepartment">Contact Department</label>
+                                <input type="text" class="form-control" id="editContactDepartment" value="<%- contactDepartment %>" autofocus>
+                            </div>
+
                             <div class="form-group">
                                 <button type="button" class="btn btn-primary save">Save</button>
                                 <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>

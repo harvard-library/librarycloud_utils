@@ -1,12 +1,12 @@
 $(function () {
 
-  var collectionsUrlBase = 'http://localhost:9090';
-  var itemsUrlBase = 'http://api.lib.harvard.edu';
-  // var collectionsUrlBase = 'http://localhost:8080/collections';
-  // var itemsUrlBase = 'http://localhost:8080/librarycloud';
+    var collectionsUrlBase = 'http://localhost:9090';
+    var itemsUrlBase = 'http://api.lib.harvard.edu';
+    // var collectionsUrlBase = 'http://localhost:8080/collections';
+    // var itemsUrlBase = 'http://localhost:8080/librarycloud';
 
     /************************** Dispatch **************************/
-    var dispatcher = _.clone(Backbone.Events)
+    var dispatcher = _.clone(Backbone.Events);
 
     /* API key updated. Update any views that check whether the API key is populated */
     dispatcher.on("apikey:updated", function (e) {
@@ -190,6 +190,14 @@ $(function () {
                 setName: "",
                 systemId: "",
                 setDescription: "",
+                setSpec: "",
+                baseUrl: "",
+                thumbnailUrn: "",
+                collectionUrn: "",
+                dcp: true,
+                public: true,
+                contactName: "",
+                contactDepartment: ""
             }
         },
 
@@ -894,8 +902,16 @@ $(function () {
 
         saveCollection: function () {
             this.model.set({
-                setName: this.$("#editCollectionName").val(),
-                setDescription: this.$("#editCollectionAbstract").val()
+                setName: this.$("#editSetName").val(),
+                setSpec: this.$("#editSetSpec").val(),
+                setDescription: this.$("#editSetDescription").val(),
+                dcp: this.$("#editDcp").is(":checked"),
+                public: this.$("#editPublic").is(":checked"),
+                baseUrl: this.$("#editBaseUrl").val(),
+                thumbnailUrn: this.$("#editThumbnailUrn").val(),
+                collectionUrn: this.$("#editCollectionUrn").val(),
+                contactName: this.$("#editContactName").val(),
+                contactDepartment: this.$("#editContactDepartment").val()
             });
             this.model.save({ wait: true });
             $(".modal").modal('hide');

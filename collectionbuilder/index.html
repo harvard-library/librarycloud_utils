@@ -93,6 +93,7 @@
 
                             <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item" <% if (!editor) { %>disabled="disabled"<% } %>>Add Items</button>
                             <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#collection-upload" <% if (!editor) { %>disabled="disabled"<% } %>>Upload Item IDs</button>
+                            <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#item-batch-upload" <% if (!editor) { %>disabled="disabled"<% } %>>Upload Item IDs (Large File)</button>
                             <button type="button" class="btn btn-default download" id="download">Download Item IDs</button>
 
                             <% } %>
@@ -388,6 +389,32 @@
         </div>
     </div>
 
+    <div class="modal " id="item-batch-upload">
+        <div id="upload-collection" class="modal-dialog modal-lg">
+
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Upload Item Batch File</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="item-batch-form">
+                            <div class="form-group">
+                                <label for="item-batch-file">Upload IDs</label>
+                                <p class="help-block">Upload a txt file containing 1 item id per line. This may take a few minutes.</p>
+                                <input type="file" id="item-batch-file" class="upload-files" />
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary save">Submit</button>
+                                <button type="button" class="btn btn-default cancel" data-dismiss='modal'>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+        </div>
+    </div>
+
     <div class="modal " id="global-api-key">
         <div id="edit-api-key" class="modal-dialog">
             <script type="text/template" id="t-edit-api-key">
@@ -427,6 +454,7 @@
     <script src="js/backbone.collectionView.min.js"></script>
     <script src="js/backbone.paginator.min.js"></script>
     <script src="js/bootbox.min.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/collectionbuilder.js"></script>
 </body>
 </html>

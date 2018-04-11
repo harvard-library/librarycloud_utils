@@ -1,9 +1,7 @@
 $(function () {
 
-    var collectionsUrlBase = 'http://localhost:9090';
-    var itemsUrlBase = 'http://api.lib.harvard.edu';
-    // var collectionsUrlBase = 'http://localhost:8080/collections';
-    // var itemsUrlBase = 'http://localhost:8080/librarycloud';
+    var collectionsUrlBase = config.collectionsUrlBase;
+    var itemsUrlBase = config.itemsUrlBase;
 
     /************************** Dispatch **************************/
     var dispatcher = _.clone(Backbone.Events);
@@ -926,53 +924,93 @@ $(function () {
         modelView: LCCollectionItemListRowView,
     });
 
-  var LCCollectionItemListViewPager = Backbone.View.extend({
-    el: $("#collection-item-pager"),
-    events: {
-      "click .prev": "previousPage",
-      "click .next": "nextPage",
-    },
+    var LCCollectionItemListViewPager = Backbone.View.extend({
+        el: $("#collection-item-pager"),
+        events: {
+            "click .prev": "previousPage",
+            "click .next": "nextPage",
+        },
 
-    previousPage: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var that = this;
-      lcCollectionItems.getPreviousPage({
-        success: function() {
-          $("#item-list tr").removeClass("added");
-          that.refresh();
+        previousPage: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var that = this;
+            lcCollectionItems.getPreviousPage({
+                success: function() {
+                    $("#item-list tr").removeClass("added");
+                    that.refresh();
+                }
+            });
+
+        },
+
+        nextPage: function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var that = this;
+            lcCollectionItems.getNextPage({
+                success: function() {
+                    $("#item-list tr").removeClass("added");
+                    that.refresh();
+                }
+            });
+
+        },
+
+        refresh: function() {
+            if(lcCollectionItems.state.currentPage > 0) {
+                $(".prev", this.$el).removeClass("disabled");
+            } else {
+                $(".prev", this.$el).addClass("disabled");
+            }
+
+            if(lcCollectionItems.state.pageSize > lcCollectionItems.size()){
+                $(".next", this.$el).addClass("disabled");
+            } else {
+                $(".next", this.$el).removeClass("disabled");
+            }
         }
-      });
+    });
 
-    },
+    /* Upload a batch file containing item ids and send it to the API */
+    var LCBatchItemUploadView = Backbone.View.extend({
+        el: $("#item-batch-upload"),
+        events: {
+            "click .save": "uploadBatchItemFile"
+        },
 
-    nextPage: function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var that = this;
-      lcCollectionItems.getNextPage({
-        success: function() {
-          $("#item-list tr").removeClass("added");
-          that.refresh();
+        uploadBatchItemFile: function(e) {
+            var setId = selectedCollection.attributes.systemId;
+            var file = $("#item-batch-file")[0].files[0];
+            if (file != undefined) {
+                $("#item-batch-upload button").addClass("disabled")
+                var data = new FormData();
+                data.append("file", file);
+
+                $.ajax({
+                    url: collectionsUrlBase + "/v2/collections/" + setId + "/items_batch_upload",
+                    headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") },
+                    data: data,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    method: 'POST',
+                    type: 'POST', // For jQuery < 1.9
+                    success: function(data, status){
+                        if (status == 'success') {
+                            $("#item-batch-upload button").removeClass("disabled")
+                        } else {
+                            console.log(status);
+                        }
+                    },
+                    error: function(obj, status, err) {
+                        console.log(err);
+                    }
+
+                });
+            }
         }
-      });
-
-    },
-
-    refresh: function() {
-      if(lcCollectionItems.state.currentPage > 0) {
-        $(".prev", this.$el).removeClass("disabled");
-      } else {
-        $(".prev", this.$el).addClass("disabled");
-      }
-
-      if(lcCollectionItems.state.pageSize > lcCollectionItems.size()){
-        $(".next", this.$el).addClass("disabled");
-      } else {
-        $(".next", this.$el).removeClass("disabled");
-      }
-    }
-  });
+    });
 
     /* Upload collection items */
     var LCCollectionUploadView = Backbone.View.extend({
@@ -1361,6 +1399,9 @@ $(function () {
     uploadCollectionView.render();
     var addCollectionButtonView = new LCCollectionAddView();
     addCollectionButtonView.render();
+    var batchItemUploadView = new LCBatchItemUploadView({ model: selectedCollection });
+    batchItemUploadView.render();
+    console.log("ssd");
 
     /* Permissions views */
     var userSearchView = new LCUserSearchFormView();

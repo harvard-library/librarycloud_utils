@@ -10,8 +10,11 @@ $(function () {
     dispatcher.on("apikey:updated", function (e) {
         //TODO: after the API Key is updated we need to refresh the collections list because permissions
         // may have changed
-        lcCollections.fetch();
-        dispatcher.trigger("collection:refresh");
+        lcCollections.fetch({
+            success: function() {
+                dispatcher.trigger("collection:refresh");
+            }
+        });
         addCollectionButtonView.render();
         titleView.render();
     });
@@ -56,13 +59,13 @@ $(function () {
         uploadCollectionView.undelegateEvents();
         uploadCollectionView = new LCCollectionUploadView({ model: selectedCollection });
         uploadCollectionView.render();
-        LCCollectionListView.render();
-        LCCollectionItemListView.render();
+        lcCollectionListView.render();
+        lcCollectionItemListView.render();
     });
 
     /* Notify collection item list view to update, once the items for a collection have been loaded */
     dispatcher.on("collectionitems:refresh", function () {
-      LCCollectionItemListView.render();
+      lcCollectionItemListView.render();
       pagerView.refresh();
     });
 
@@ -70,6 +73,7 @@ $(function () {
     dispatcher.on("collection:add", function (e) {
         lcCollections.addItem(e.setName);
     });
+
 
 
     /* Download a list of collection item IDs */
@@ -136,7 +140,7 @@ $(function () {
 
     /* Notify the search results list to update, once the search has completed */
     dispatcher.on("search:refresh", function (e) {
-        LCSearchItemListView.render();
+        lcSearchItemListView.render();
         searchPaginationView.render();
         searchResultCountView.render();
     });
@@ -177,7 +181,7 @@ $(function () {
     });
 
     dispatcher.on("userpermissions:refresh", function (e) {
-        LCCollectionPermissionListView.render();
+        lcCollectionPermissionListView.render();
     });
 
 
@@ -751,17 +755,7 @@ $(function () {
         selectCollection: function () {
             dispatcher.trigger("collection:select", this.model);
         }
-
     });
-
-    /* Display a list of collections */
-    var LCCollectionListView = new Backbone.CollectionView({
-        el: $("ul#collection-list"),
-        selectable: false,
-        collection: lcCollections,
-        modelView: LCCollectionView,
-    });
-
 
     var LCCollectionAddView = Backbone.View.extend({
         el: $("#add-collection-button"),
@@ -916,14 +910,6 @@ $(function () {
         },
     });
 
-    /* Display the list of items from the selected collection */
-    var LCCollectionItemListView = new Backbone.CollectionView({
-        el: $("table#item-list"),
-        selectable: false,
-        collection: lcCollectionItems,
-        modelView: LCCollectionItemListRowView,
-    });
-
     var LCCollectionItemListViewPager = Backbone.View.extend({
         el: $("#collection-item-pager"),
         events: {
@@ -984,13 +970,33 @@ $(function () {
             var file = $("#item-batch-file")[0].files[0];
             if (file != undefined) {
                 $("#item-batch-upload button").addClass("disabled")
+
+                var requestResultStatus;
+                var requestSentNotification = $.notify({
+                    title: 'Batch Item Request Sent',
+                    message: 'Please do not refresh your browser or upload another batch until the request completes.'
+                },{
+                    type: 'info',
+                    delay: 0,
+                    onClosed: function() {
+                        $.notify({
+                            title: 'Batch Item Request Complete',
+                            message: 'The server responded with status: '+requestResultStatus
+                        },{
+                            type: 'success'
+                        });
+                    }
+                });
+
+                $("#item-batch-upload").modal('hide');
+
                 var data = new FormData();
                 data.append("file", file);
-
                 $.ajax({
                     url: collectionsUrlBase + "/v2/collections/" + setId + "/items_batch_upload",
                     headers: { 'X-LibraryCloud-API-Key': apiKey.get("key") },
                     data: data,
+                    timeout: 0,
                     cache: false,
                     contentType: false,
                     processData: false,
@@ -998,10 +1004,22 @@ $(function () {
                     type: 'POST', // For jQuery < 1.9
                     success: function(data, status){
                         if (status == 'success') {
-                            $("#item-batch-upload button").removeClass("disabled")
+                          // refresh the item list view
+                          lcCollectionItems.fetch({
+                            success: function() {
+                              dispatcher.trigger("collectionitems:refresh");
+                            }
+                          });
+
                         } else {
                             console.log(status);
                         }
+                        requestResultStatus = status;
+                        requestSentNotification.close();
+
+
+                        $("#item-batch-upload button").removeClass("disabled");
+
                     },
                     error: function(obj, status, err) {
                         console.log(err);
@@ -1132,14 +1150,6 @@ $(function () {
             });
         }
 
-    });
-
-    /* Display the search results */
-    var LCSearchItemListView = new Backbone.CollectionView({
-        el: $("table#search-results-list"),
-        selectable: false,
-        collection: lcSearchResultItems,
-        modelView: LCSearchItemView,
     });
 
     /* Display the pagination for the search results */
@@ -1316,7 +1326,7 @@ $(function () {
     });
 
     /* Display the user permissions */
-    var LCCollectionPermissionListView = new Backbone.CollectionView({
+    var lcCollectionPermissionListView = new Backbone.CollectionView({
         el: $("table#user-list"),
         selectable: false,
         collection: lcPermissions,
@@ -1382,14 +1392,36 @@ $(function () {
     apiKey.fetch();
 
     /* Get the collection list and display it */
-    lcCollections.fetch();
+    $("#loading-collections-please-wait").modal();
+    lcCollections.fetch({
+        success: function() {
+            $("#loading-collections-please-wait").modal('hide');
+        }
+    });
 
     /* Get the list of possible roles */
     lcRoles.fetch();
 
-    LCCollectionListView.render();
-
     /* Collection display and editing views */
+    /* Display a list of collections */
+    var lcCollectionListView = new Backbone.CollectionView({
+        el: $("ul#collection-list"),
+        selectable: false,
+        collection: lcCollections,
+        modelView: LCCollectionView,
+    });
+
+    lcCollectionListView.render();
+
+
+    /* Display the list of items from the selected collection */
+    var lcCollectionItemListView = new Backbone.CollectionView({
+        el: $("table#item-list"),
+        selectable: false,
+        collection: lcCollectionItems,
+        modelView: LCCollectionItemListRowView,
+    });
+
     var selectedCollection = new LCCollection();
     var titleView = new LCCollectionDetailTitleView({ model: selectedCollection });
     titleView.render();
@@ -1401,12 +1433,22 @@ $(function () {
     addCollectionButtonView.render();
     var batchItemUploadView = new LCBatchItemUploadView({ model: selectedCollection });
     batchItemUploadView.render();
-    console.log("ssd");
+
+
+
 
     /* Permissions views */
     var userSearchView = new LCUserSearchFormView();
 
     /* Search views */
+    /* Display the search results */
+    var lcSearchItemListView = new Backbone.CollectionView({
+        el: $("table#search-results-list"),
+        selectable: false,
+        collection: lcSearchResultItems,
+        modelView: LCSearchItemView,
+    });
+
     var searchView = new LCSearchFormView({ model: selectedCollection });
     var searchPaginationView = new LCSearchItemListPaginationView({ model: lcSearchResultItems });
     var searchResultCountView = new LCSearchItemListResultCountView({ model: lcSearchResultItems });

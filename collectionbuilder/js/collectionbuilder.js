@@ -78,26 +78,8 @@ $(function () {
 
     /* Download a list of collection item IDs */
     dispatcher.on("collection:download", function (e) {
-        var collection = lcCollections.get(lcCollectionItems.collection_id);
-        var filename = collection.get('setName').trim() + '.txt';
-        var ids = _.pluck(lcCollectionItems.models, "id").join('\r\n');
-
-        if (window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(new Blob([ids], 'text/csv'), filename);
-        }
-        else {
-            var element = document.createElement('a');
-
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(ids));
-            element.setAttribute('download', filename);
-
-            element.style.display = 'none';
-            document.body.appendChild(element);
-
-            element.click();
-
-            document.body.removeChild(element);
-        }
+        var downloadUrl = collectionsUrlBase + '/v2/collections/' + e.systemId + '/items_batch_download';
+        window.location = downloadUrl;
     });
 
 
@@ -818,7 +800,7 @@ $(function () {
         },
 
         downloadCollectionItems: function () {
-            dispatcher.trigger("collection:download");
+            dispatcher.trigger("collection:download", {systemId: this.model.attributes.systemId});
         },
 
         loadPermissions: function () {
@@ -1010,21 +992,16 @@ $(function () {
                               dispatcher.trigger("collectionitems:refresh");
                             }
                           });
-
-                        } else {
-                            console.log(status);
                         }
                         requestResultStatus = status;
-                        requestSentNotification.close();
-
-
-                        $("#item-batch-upload button").removeClass("disabled");
-
                     },
                     error: function(obj, status, err) {
-                        console.log(err);
+                        requestResultStatus = status + " " + err;
+                    },
+                    complete: function() {
+                        requestSentNotification.close();
+                        $("#item-batch-upload button").removeClass("disabled");
                     }
-
                 });
             }
         }

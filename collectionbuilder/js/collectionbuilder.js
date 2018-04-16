@@ -496,7 +496,7 @@ $(function () {
         },
 
         state: {
-          pageSize: 10,
+          pageSize: 100,
           currentPage: 0
         },
 

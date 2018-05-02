@@ -1373,6 +1373,9 @@ $(function () {
     lcCollections.fetch({
         success: function() {
             $("#loading-collections-please-wait").modal('hide');
+        },
+        error: function(obj, response, opts) {
+            $("#loading-collections-please-wait .modal-body").html("<p>Unable to reach Collections API.</p><p>Reason: "+response.statusText+"</p><p>API Url: "+obj.url+"</p>");
         }
     });
 

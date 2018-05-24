@@ -460,12 +460,24 @@ $(function () {
         model: LCCollectionItem,
 
         url: function () {
-            return collectionsUrlBase + '/v2/collections/' + this.collection_id + '/items';
+            return collectionsUrlBase + '/v2/collections/' + this.collection_id + '/items_paginated';
         },
 
         initialize: function (options) {
             options || (options = {});
             this.collection_id = options.collection_id;
+        },
+
+        parseRecords: function(resp, options) {
+            return(resp.items);
+        },
+
+        parseState: function(resp, qp, state, opts) {
+            if(resp.total_pages) {
+                state.totalPages = resp.total_pages;
+                state.lastPage = resp.total_pages;
+            }
+            return state;
         },
 
         selectCollection: function (collection_id) {
@@ -497,14 +509,13 @@ $(function () {
 
         state: {
           pageSize: 100,
-          currentPage: 0
+          currentPage: 1
         },
 
         queryParams: {
             currentPage: "page",
             pageSize: "size",
         }
-
     });
 
     var LCUserPermission = Backbone.Model.extend({
@@ -897,26 +908,17 @@ $(function () {
         events: {
             "click .prev": "previousPage",
             "click .next": "nextPage",
+            "click .pagination .page-item": "getPage"
         },
 
-        previousPage: function(e) {
+        pageButtonTemplate: _.template('<li class="page-item page-<%= pageNumber %>"><a class="page-link btn <%= disabled ? \"disabled\" : \"\" %>" href="#"><%= pageNumber %></a></li>'),
+
+        getPage: function(e) {
             e.preventDefault();
             e.stopPropagation();
+            var page = parseInt(e.target.innerHTML);
             var that = this;
-            lcCollectionItems.getPreviousPage({
-                success: function() {
-                    $("#item-list tr").removeClass("added");
-                    that.refresh();
-                }
-            });
-
-        },
-
-        nextPage: function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var that = this;
-            lcCollectionItems.getNextPage({
+            lcCollectionItems.getPage(page, {
                 success: function() {
                     $("#item-list tr").removeClass("added");
                     that.refresh();
@@ -926,16 +928,11 @@ $(function () {
         },
 
         refresh: function() {
-            if(lcCollectionItems.state.currentPage > 0) {
-                $(".prev", this.$el).removeClass("disabled");
-            } else {
-                $(".prev", this.$el).addClass("disabled");
-            }
+            $("#collection-item-pager ul").empty();
 
-            if(lcCollectionItems.state.pageSize > lcCollectionItems.size()){
-                $(".next", this.$el).addClass("disabled");
-            } else {
-                $(".next", this.$el).removeClass("disabled");
+            for (var i=1; i < lcCollectionItems.state.totalPages+1; i++) {
+                var disabled = (lcCollectionItems.state.currentPage == i);
+                $("#collection-item-pager ul").append(this.pageButtonTemplate({pageNumber: i, disabled: disabled}));
             }
         }
     });

@@ -333,7 +333,7 @@ $(function () {
         },
 
         getLibraryCloudId: function (id) {
-            var lcIdLine = _.find(_.flatten([id]), function (s) { return s.indexOf("librarycloud") != -1; });
+            var lcIdLine = _.find(_.without(_.flatten([id]), null), function (s) { return s.indexOf("librarycloud") != -1; });
             return lcIdLine.replace("librarycloud: ", "");
         },
 

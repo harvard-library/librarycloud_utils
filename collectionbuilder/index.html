@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -60,7 +60,7 @@
                     </div>
                     <ul id="collection-list" class="list-group"></ul>
                     <script type="text/template" id="t-collection-list">
-                        <a href='/? #<%- identifier %>'><%- title %></a>
+                        <a href='#<%- systemId %>'><%- setName %></a>
                     </script>
                     <div class="panel-body" id="add-collection-button">
                         <script type="text/template" id="t-collection-add">
@@ -75,10 +75,10 @@
                     <script type="text/template" id="t-collection-detail">
                         <div class="panel-heading">
                             <h3 id="collection-title" class="panel-title">
-                                <% if (identifier) { %>
-                                <%- title %> <small><%- identifier %></small>
+                                <% if (systemId) { %>
+                                <%- setName %> <small><%- systemId %></small>
                             </h3>
-                            <% if (abstract) { %><strong>Abstract: </strong><%- abstract %><% } %>
+                            <% if (setDescription) { %><strong>Description: </strong><%- setDescription %><% } %>
                             <br />
                             <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Edit</button>
                             <button type="button" class="btn btn-default edit permissions" data-toggle="modal" data-target="#collection-permissions-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Permissions</button>
@@ -89,10 +89,11 @@
                         </div>
                         <div id="sections-document" class="panel-body">
 
-                            <% if (identifier) { %>
+                            <% if (systemId) { %>
 
                             <button type="button" class="btn btn-default add" data-toggle="modal" data-target="#collection-add-item" <% if (!editor) { %>disabled="disabled"<% } %>>Add Items</button>
                             <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#collection-upload" <% if (!editor) { %>disabled="disabled"<% } %>>Upload Item IDs</button>
+                            <button type="button" class="btn btn-default upload" data-toggle="modal" data-target="#item-batch-upload" <% if (!editor) { %>disabled="disabled"<% } %>>Upload Item IDs (Large File)</button>
                             <button type="button" class="btn btn-default download" id="download">Download Item IDs</button>
 
                             <% } %>
@@ -118,6 +119,10 @@
                     </script>
                     </tbody>
                 </table>
+                <nav aria-label="pager" id="collection-item-pager">
+                  <ul class="pagination">
+                  </ul>
+                </nav>
             </div>
         </div>
     </div>
@@ -225,19 +230,52 @@
             <script type="text/template" id="t-edit-collection">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <a class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></a>
-                        <h4 class="modal-title">Edit Collection</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Set</h4>
                     </div>
                     <div class="modal-body">
                         <form>
                             <div class="form-group">
-                                <label for="editCollectionName">Collection Name</label>
-                                <input type="text" class="form-control" id="editCollectionName" value="<%- title %>" autofocus>
+                                <label for="editSetName">Set Name</label>
+                                <input type="text" class="form-control" id="editSetName" value="<%- setName %>" autofocus>
                             </div>
                             <div class="form-group">
-                                <label for="editCollectionAbstract">Collection Abstract</label>
-                                <textarea class="form-control" id="editCollectionAbstract" rows="3"><%- abstract %></textarea>
+                                <label for="editSetSpec">Set Spec</label>
+                                <input type="text" class="form-control" id="editSetSpec" value="<%- setSpec %>" autofocus>
                             </div>
+                            <div class="form-group">
+                                <label for="editSetDescription">Set Description</label>
+                                <textarea class="form-control" id="editSetDescription" rows="3"><%- setDescription %></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="editDcp">DCP</label>
+                                <input id="editDcp" type="checkbox" <% if(dcp) { %>checked="<%- dcp %>"<% } %>/ >
+                            </div>
+                            <div class="form-group">
+                                <label for="editPublic">Public</label>
+                                <input id="editPublic" type="checkbox" <% if(public) { %>checked="true"<% } %>/ >
+                            </div>
+                            <div class="form-group">
+                                <label for="editBaseUrl">Base URL</label>
+                                <input type="text" class="form-control" id="editBaseUrl" value="<%- baseUrl %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCollectionUrn">Collection URN</label>
+                                <input type="text" class="form-control" id="editCollectionUrn" value="<%- collectionUrn %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editThumbnailUrn">Thumbnail URN</label>
+                                <input type="text" class="form-control" id="editThumbnailUrn" value="<%- thumbnailUrn %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editContactName">Contact Name</label>
+                                <input type="text" class="form-control" id="editContactName" value="<%- contactName %>" autofocus>
+                            </div>
+                            <div class="form-group">
+                                <label for="editContactDepartment">Contact Department</label>
+                                <input type="text" class="form-control" id="editContactDepartment" value="<%- contactDepartment %>" autofocus>
+                            </div>
+
                             <div class="form-group">
                                 <button type="button" class="btn btn-primary save">Save</button>
                                 <button type="button" class="btn btn-default " data-dismiss='modal'>Cancel</button>
@@ -283,7 +321,7 @@
                                 <td class="title"><%- name %></td>
                                 <td><%- email %></td>
                                 <td>
-                                    <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button> 
+                                    <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button>
                                     <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>
                                 </td>
                             </script>
@@ -306,8 +344,8 @@
                                 <td>
                                     <% if (editor) { %>
                                     <button type="button" class="btn btn-default btn-xs make-owner">Make owner</button>
-                                    <% } else { %> 
-                                    <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>  
+                                    <% } else { %>
+                                    <button type="button" class="btn btn-default btn-xs make-editor">Make editor</button>
                                     <% } %>
                                     <button type="button" class="remove btn btn-default btn-xs remove-user">Remove User</button>
                                 </td>
@@ -350,6 +388,32 @@
         </div>
     </div>
 
+    <div class="modal " id="item-batch-upload">
+        <div id="upload-collection" class="modal-dialog modal-lg">
+
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Upload Item Batch File</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="item-batch-form">
+                            <div class="form-group">
+                                <label for="item-batch-file">Upload IDs</label>
+                                <p class="help-block">Upload a txt file containing 1 item id per line. This may take a few minutes.</p>
+                                <input type="file" id="item-batch-file" class="upload-files" />
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-primary save">Submit</button>
+                                <button type="button" class="btn btn-default cancel" data-dismiss='modal'>Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+        </div>
+    </div>
+
     <div class="modal " id="global-api-key">
         <div id="edit-api-key" class="modal-dialog">
             <script type="text/template" id="t-edit-api-key">
@@ -379,15 +443,33 @@
         </div>
     </div>
 
+    <div class="modal " id="loading-collections-please-wait" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4>Loading Collections</h4>
+          </div>
+          <div class="modal-body">
+            <div class="progress progress-striped active">
+              <div class="bar" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
-    <script src="js/backbone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="js/bootstrap-notify.min.js"></script>
+    <script src="js/backbone-min.js"></script>
     <script src="js/backbone.localStorage-min.js"></script>
     <script src="js/backbone.collectionView.min.js"></script>
+    <script src="js/backbone.paginator.min.js"></script>
     <script src="js/bootbox.min.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/collectionbuilder.js"></script>
 </body>
 </html>

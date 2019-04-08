@@ -269,7 +269,7 @@ $(function () {
 
     var LCCollectionList = Backbone.Collection.extend({
         model: LCCollection,
-        url: collectionsUrlBase + '/v2/collections?limit=999',
+        url: collectionsUrlBase + '/v2/collections?limit=999&sort=setName',
 
         sync: function (command, model, options) {
             if (apiKey.get("key")) {

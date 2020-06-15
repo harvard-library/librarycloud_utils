@@ -81,7 +81,8 @@
                             <% if (setDescription) { %><strong>Description: </strong><%- setDescription %><% } %>
                             <br />
                             <button type="button" class="btn btn-default edit" data-toggle="modal" data-target="#collection-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Edit</button>
-                            <button type="button" class="btn btn-default edit permissions" data-toggle="modal" data-target="#collection-permissions-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Permissions</button>
+                            <!-- <button type="button" class="btn btn-default edit permissions" data-toggle="modal" data-target="#collection-permissions-edit" <% if (!owner) { %>disabled="disabled"<% } %>>Permissions</button> -->
+                            <button type="button" class="btn btn-default edit permissions" data-toggle="modal" data-target="#collection-permissions-edit" style="display:none;"> Permissions</button>
                             <button type="button" class="btn btn-danger  delete" id="delete-collection" <% if (!owner) { %>disabled="disabled"<% } %>>Delete Collection</button>
                             <% } else { %>
                             Select a collection to view or edit

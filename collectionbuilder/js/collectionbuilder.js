@@ -175,7 +175,7 @@ $(function () {
                 setName: "",
                 systemId: "",
                 setDescription: "",
-                setSpec: "",
+                setSpec: null,
                 baseUrl: "",
                 thumbnailUrn: "",
                 collectionUrn: "",
@@ -256,20 +256,25 @@ $(function () {
             return Backbone.sync.apply(this, arguments);
         },
 
+        // isEditor and isOwner both have been changed to only return true. This is due to the Get Collections for User endpoint in Librarycloud not
+        // attaching rights information to collections. However, since a user can now only get collections that they own, this should be ok.
+
         isEditor: function () {
-            return (this.attributes.accessRights && this.attributes.accessRights.role && this.attributes.accessRights.role.name == "editor")
-                || this.isOwner();
+            return true
+            // return (this.attributes.accessRights && this.attributes.accessRights.role && this.attributes.accessRights.role.name == "editor")
+                // || this.isOwner();
         },
 
         isOwner: function () {
-            return this.attributes.accessRights && this.attributes.accessRights.role && this.attributes.accessRights.role.name == "owner";
+            return true
+            // return this.attributes.accessRights && this.attributes.accessRights.role && this.attributes.accessRights.role.name == "owner";
 
         }
     });
 
     var LCCollectionList = Backbone.Collection.extend({
         model: LCCollection,
-        url: collectionsUrlBase + '/v2/collections?limit=999&sort=setName',
+        url: collectionsUrlBase + '/v2/collections/user',
 
         sync: function (command, model, options) {
             if (apiKey.get("key")) {
@@ -282,6 +287,9 @@ $(function () {
 
         initialize: function (options) {
             // this.on("all", function(e,c){console.log(e);console.log(arguments);});
+        },
+        comparator: function(set) {
+            return set.attributes.setName
         },
 
         addItem: function (setName) {
@@ -1433,7 +1441,7 @@ $(function () {
             $("#loading-collections-please-wait").modal('hide');
         },
         error: function(obj, response, opts) {
-            $("#loading-collections-please-wait .modal-body").html("<p>Unable to reach Collections API.</p><p>Reason: "+response.statusText+"</p><p>API Url: "+obj.url+"</p>");
+            $("#loading-collections-please-wait .modal-body").html("<p>Unable to reach Collections API. Please check that you have entered a valid API Key</p><p>Reason: "+response.statusText+"</p><p>API Url: "+obj.url+"</p><div class='form-group'><button type='button' class='btn btn-default ' data-dismiss='modal'>Ok</button></div>");
         }
     });
 
@@ -1445,7 +1453,7 @@ $(function () {
     var lcCollectionListView = new Backbone.CollectionView({
         el: $("ul#collection-list"),
         selectable: false,
-        collection: lcCollections,
+        collection: lcCollections.sort(),
         modelView: LCCollectionView,
     });
 

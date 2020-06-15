@@ -175,7 +175,7 @@ $(function () {
                 setName: "",
                 systemId: "",
                 setDescription: "",
-                setSpec: "",
+                setSpec: null,
                 baseUrl: "",
                 thumbnailUrn: "",
                 collectionUrn: "",

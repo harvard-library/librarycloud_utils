@@ -16,7 +16,4 @@ Configuration is handled in config.js (see config.js.example), and is in place o
 When a release is ready it should follow major.minor.micro pattern  
 Such as 1.1.0 (next as of 2022-02-09)
 
-Github
----------------------
-https://github.com/harvard-library/librarycloud_utils
 
